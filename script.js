@@ -246,7 +246,7 @@ closeMessageBtn.addEventListener('click', () => {
 
     if (collectedStars.length >= totalStars) {
         gameComplete = true;
-        showConstellation();
+        showConstellation();   // ✅ FIXED: now exists
     } else {
         currentFallingStar = new FallingStar(memories[collectedStars.length]);
         starActive = true;
@@ -254,12 +254,11 @@ closeMessageBtn.addEventListener('click', () => {
 });
 
 /* =========================
-   CONSTELLATION HEART (6 POINT PERFECT)
+   CONSTELLATION HEART FIX (BEZIER)
 ========================= */
 
 let clickableStars = [];
 
-/* popup */
 const starPopup = document.createElement('div');
 starPopup.style.position = 'fixed';
 starPopup.style.background = 'rgba(0,0,0,0.75)';
@@ -272,20 +271,24 @@ starPopup.style.display = 'none';
 starPopup.style.zIndex = 9999;
 document.body.appendChild(starPopup);
 
-/* TRUE HEART (math-based symmetry) */
-function getHeartPoints(size, titles) {
+function getHeartPoints(size) {
     return [
-        { x: 0.5, y: 0.82 },
-        { x: 0.25, y: 0.55 },
-        { x: 0.25, y: 0.25 },
-        { x: 0.5, y: 0.15 },
-        { x: 0.75, y: 0.25 },
-        { x: 0.75, y: 0.55 }
-    ].map((p, i) => ({
+        { x: 0.5, y: 0.85 },
+        { x: 0.22, y: 0.60 },
+        { x: 0.22, y: 0.28 },
+        { x: 0.38, y: 0.12 },
+        { x: 0.62, y: 0.12 },
+        { x: 0.78, y: 0.28 }
+    ].map(p => ({
         x: p.x * size,
-        y: p.y * size,
-        title: titles[i]
+        y: p.y * size
     }));
+}
+
+/* ✅ FIXED MISSING FUNCTION */
+function showConstellation() {
+    constellationModal.classList.remove('hidden');
+    drawConstellation();
 }
 
 function drawConstellation() {
@@ -297,16 +300,18 @@ function drawConstellation() {
     constellationCtx.clearRect(0, 0, size, size);
     clickableStars = [];
 
-    const points = getHeartPoints(size, [
+    const titles = [
         "Start of Us ❤️",
         "First Smile",
         "Late Night Talks",
         "Our Peak 💫",
         "Your Laugh",
         "First Memory"
-    ]);
+    ];
 
-    /* smooth heart curve */
+    const points = getHeartPoints(size);
+
+    /* HEART CURVE (SMOOTH BEZIER) */
     constellationCtx.strokeStyle = 'rgba(255,255,255,0.25)';
     constellationCtx.lineWidth = 2;
     constellationCtx.beginPath();
@@ -314,15 +319,26 @@ function drawConstellation() {
     constellationCtx.moveTo(points[0].x, points[0].y);
 
     for (let i = 1; i < points.length; i++) {
-        const midX = (points[i - 1].x + points[i].x) / 2;
-        const midY = (points[i - 1].y + points[i].y) / 2;
-        constellationCtx.quadraticCurveTo(points[i - 1].x, points[i - 1].y, midX, midY);
+        const prev = points[i - 1];
+        const curr = points[i];
+
+        const cx = (prev.x + curr.x) / 2;
+        const cy = Math.min(prev.y, curr.y) - 30;
+
+        constellationCtx.quadraticCurveTo(prev.x, prev.y, cx, cy);
     }
+
+    constellationCtx.quadraticCurveTo(
+        points[points.length - 1].x,
+        points[points.length - 1].y,
+        points[0].x,
+        points[0].y
+    );
 
     constellationCtx.stroke();
 
-    /* stars */
-    points.forEach(p => {
+    /* STARS */
+    points.forEach((p, i) => {
         const glow = constellationCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 22);
 
         glow.addColorStop(0, 'rgba(255,255,210,0.95)');
@@ -338,7 +354,12 @@ function drawConstellation() {
         constellationCtx.arc(p.x, p.y, 6, 0, Math.PI * 2);
         constellationCtx.fill();
 
-        clickableStars.push({ ...p, r: 25 });
+        clickableStars.push({
+            x: p.x,
+            y: p.y,
+            r: 24,
+            title: titles[i]
+        });
     });
 }
 
