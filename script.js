@@ -2,48 +2,28 @@ const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 
 const bgMusic = document.getElementById('bg-music');
-
 const bucket = document.getElementById('bucket');
-
 const starsLeftSpan = document.getElementById('stars-count');
-
 const hintText = document.getElementById('hint-text');
 
 const messageModal = document.getElementById('message-modal');
-
 const messageText = document.getElementById('message-text');
-
 const closeMessageBtn = document.getElementById('close-message');
 
 const constellationModal = document.getElementById('constellation-modal');
+const constellationCanvas = document.getElementById('constellation-canvas');
+const constellationCtx = constellationCanvas.getContext('2d');
 
-const constellationCanvas =
-    document.getElementById('constellation-canvas');
+const replayBtn = document.getElementById('replay-button');
 
-const constellationCtx =
-    constellationCanvas.getContext('2d');
+/* DEVICE */
+const isMobile = /Android|iPhone|iPad|iPod|Tablet/i.test(navigator.userAgent);
 
-const replayBtn =
-    document.getElementById('replay-button');
-
-
-/* =========================================
-   DEVICE
-========================================= */
-
-const isMobile =
-    /Android|iPhone|iPad|iPod|Tablet/i.test(navigator.userAgent);
-
-
-/* =========================================
-   RESPONSIVE SIZES
-========================================= */
-
+/* RESPONSIVE */
 let bucketWidth;
 let starSize;
 
 function setupResponsiveSizes() {
-
     const w = window.innerWidth;
 
     if (isMobile) {
@@ -55,37 +35,23 @@ function setupResponsiveSizes() {
     }
 
     bucket.style.width = `${bucketWidth}px`;
-    bucket.style.height = 'auto';
 }
-
 setupResponsiveSizes();
 
-
-/* =========================================
-   CANVAS
-========================================= */
-
+/* CANVAS */
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     setupResponsiveSizes();
 }
-
 resizeCanvas();
-
 window.addEventListener('resize', resizeCanvas);
 
-
-/* =========================================
-   TIME COUNTER
-========================================= */
-
+/* TIME */
 const messageDate = new Date(2026, 4, 24, 17, 20);
 
 function getTimePassed() {
-
     const now = new Date();
-
     const diff = now - messageDate;
 
     const totalMinutes = Math.floor(diff / (1000 * 60));
@@ -96,93 +62,65 @@ function getTimePassed() {
     return `${days} days, ${hours} hours, ${mins} minutes`;
 }
 
-
-/* =========================================
-   MEMORIES
-========================================= */
-
-memories.forEach(memory => {
-    memory.message = memory.message.replace(
-        /\[TIME_PASSED\]/g,
-        getTimePassed()
-    );
+memories.forEach(m => {
+    m.message = m.message.replace(/\[TIME_PASSED\]/g, getTimePassed());
 });
 
-
-/* =========================================
-   GAME STATE
-========================================= */
-
+/* STATE */
 let collectedStars = [];
 let totalStars = memories.length;
 let currentFallingStar = null;
 let gameComplete = false;
 let starActive = false;
 
-
-/* =========================================
-   MOON POSITION
-========================================= */
-
+/* MOVEMENT */
 let bucketX = window.innerWidth / 2;
 let bucketY = window.innerHeight * 0.82;
 
-function resetMoonPosition() {
-    bucketX = window.innerWidth / 2;
-    bucketY = window.innerHeight * 0.82;
-    updateBucketPosition();
-}
-
-function updateBucketPosition() {
+function updateBucket() {
     bucket.style.left = `${bucketX}px`;
     bucket.style.top = `${bucketY}px`;
 }
 
-resetMoonPosition();
+function resetBucket() {
+    bucketX = window.innerWidth / 2;
+    bucketY = window.innerHeight * 0.82;
+    updateBucket();
+}
+resetBucket();
 
-
-/* =========================================
-   CONTROLS
-========================================= */
-
+/* CONTROLS */
 document.addEventListener('mousemove', (e) => {
     if (isMobile) return;
     if (!messageModal.classList.contains('hidden')) return;
 
     bucketX = e.clientX;
     bucketY = e.clientY;
-    updateBucketPosition();
+    updateBucket();
 });
 
 document.addEventListener('touchmove', (e) => {
     if (!isMobile) return;
     if (!messageModal.classList.contains('hidden')) return;
 
-    const touch = e.touches[0];
-    bucketX = touch.clientX;
-    bucketY = touch.clientY;
-    updateBucketPosition();
+    const t = e.touches[0];
+    bucketX = t.clientX;
+    bucketY = t.clientY;
+    updateBucket();
 }, { passive: true });
 
-
-/* =========================================
-   STAR CLASS
-========================================= */
-
+/* STAR CLASS */
 class FallingStar {
-
     constructor(memoryData) {
         this.memoryData = memoryData;
         this.reset();
     }
 
     reset() {
-
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * (canvas.height * 0.33);
 
-        const exitLeft = Math.random() < 0.5;
-        const targetX = exitLeft ? -250 : canvas.width + 250;
+        const targetX = Math.random() < 0.5 ? -200 : canvas.width + 200;
         const targetY = canvas.height * 0.75;
 
         const dx = targetX - this.x;
@@ -201,11 +139,10 @@ class FallingStar {
     }
 
     update() {
-
         this.pulse += 0.05;
 
         if (this.fadeIn) {
-            this.opacity += 0.015;
+            this.opacity += 0.02;
             if (this.opacity >= 1) {
                 this.opacity = 1;
                 this.fadeIn = false;
@@ -216,38 +153,32 @@ class FallingStar {
         this.x += this.vx;
         this.y += this.vy;
 
+        if (this.checkCollision()) this.catchStar();
+
         if (
             this.x < -300 ||
             this.x > canvas.width + 300 ||
-            this.y > canvas.height * 0.76
+            this.y > canvas.height * 0.8
         ) {
             this.reset();
-        }
-
-        if (this.checkCollision()) {
-            this.catchStar();
         }
     }
 
     checkCollision() {
-        const rect = bucket.getBoundingClientRect();
-
+        const r = bucket.getBoundingClientRect();
         return (
-            this.x > rect.left &&
-            this.x < rect.right &&
-            this.y > rect.top &&
-            this.y < rect.bottom
+            this.x > r.left &&
+            this.x < r.right &&
+            this.y > r.top &&
+            this.y < r.bottom
         );
     }
 
     catchStar() {
-
         starActive = false;
-
         collectedStars.push(this.memoryData);
 
-        starsLeftSpan.textContent =
-            totalStars - collectedStars.length;
+        starsLeftSpan.textContent = totalStars - collectedStars.length;
 
         if (collectedStars.length === 1) {
             hintText.classList.add('hidden');
@@ -257,17 +188,13 @@ class FallingStar {
     }
 
     draw(ctx) {
-
         const pulse = Math.sin(this.pulse) * 0.3 + 0.7;
 
         ctx.save();
         ctx.globalAlpha = this.opacity;
         ctx.translate(this.x, this.y);
 
-        const glow = ctx.createRadialGradient(
-            0, 0, 0, 0, 0, this.size * 2
-        );
-
+        const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size * 2);
         glow.addColorStop(0, 'rgba(255,255,220,0.9)');
         glow.addColorStop(1, 'rgba(255,255,220,0)');
 
@@ -276,33 +203,23 @@ class FallingStar {
         ctx.arc(0, 0, this.size * 2, 0, Math.PI * 2);
         ctx.fill();
 
-        this.drawStarShape(
-            ctx,
-            0,
-            0,
-            this.size * pulse,
-            this.size * 0.45,
-            5
-        );
+        this.drawStar(ctx, this.size * pulse);
 
         ctx.restore();
     }
 
-    drawStarShape(ctx, cx, cy, outerR, innerR, points) {
-
+    drawStar(ctx, r) {
         ctx.fillStyle = 'rgba(255,255,240,0.95)';
         ctx.beginPath();
 
-        for (let i = 0; i < points * 2; i++) {
+        for (let i = 0; i < 10; i++) {
+            const angle = (i * Math.PI) / 5 - Math.PI / 2;
+            const radius = i % 2 === 0 ? r : r * 0.45;
 
-            const radius = i % 2 === 0 ? outerR : innerR;
-            const angle = (i * Math.PI) / points - Math.PI / 2;
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius;
 
-            const x = cx + Math.cos(angle) * radius;
-            const y = cy + Math.sin(angle) * radius;
-
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         }
 
         ctx.closePath();
@@ -310,13 +227,8 @@ class FallingStar {
     }
 }
 
-
-/* =========================================
-   MESSAGE SYSTEM
-========================================= */
-
+/* MESSAGE */
 function showMessage(memoryData) {
-
     messageText.innerHTML = `
         <h3 style="color:#ffd700;margin-bottom:12px;">
             ${memoryData.title}
@@ -327,223 +239,158 @@ function showMessage(memoryData) {
     messageModal.classList.remove('hidden');
 }
 
-function closeCurrentMessage() {
-
+closeMessageBtn.addEventListener('click', () => {
     messageModal.classList.add('hidden');
 
-    resetMoonPosition();
+    resetBucket();
 
     if (collectedStars.length >= totalStars) {
         gameComplete = true;
         showConstellation();
     } else {
-        currentFallingStar =
-            new FallingStar(memories[collectedStars.length]);
+        currentFallingStar = new FallingStar(memories[collectedStars.length]);
         starActive = true;
     }
-}
+});
 
-closeMessageBtn.addEventListener('click', closeCurrentMessage);
-
-
-/* =========================================
-   CONSTELLATION (FIXED HEART + POPUP)
-========================================= */
+/* =========================
+   CONSTELLATION HEART (6 POINT PERFECT)
+========================= */
 
 let clickableStars = [];
+
+/* popup */
 const starPopup = document.createElement('div');
 starPopup.style.position = 'fixed';
-starPopup.style.padding = '8px 12px';
 starPopup.style.background = 'rgba(0,0,0,0.75)';
 starPopup.style.color = '#fff';
-starPopup.style.borderRadius = '10px';
-starPopup.style.fontSize = '13px';
+starPopup.style.padding = '6px 10px';
+starPopup.style.borderRadius = '8px';
+starPopup.style.fontSize = '12px';
 starPopup.style.pointerEvents = 'none';
-starPopup.style.zIndex = 9999;
 starPopup.style.display = 'none';
+starPopup.style.zIndex = 9999;
 document.body.appendChild(starPopup);
 
-function showConstellation() {
-    constellationModal.classList.remove('hidden');
-    drawConstellation();
-}
-
-/* TRUE HEART SHAPE (6 STARS ONLY) */
-function getHeartPoints(size) {
+/* TRUE HEART (math-based symmetry) */
+function getHeartPoints(size, titles) {
     return [
         { x: 0.5, y: 0.82 },
         { x: 0.25, y: 0.55 },
-        { x: 0.20, y: 0.30 },
-        { x: 0.35, y: 0.18 },
-        { x: 0.65, y: 0.18 },
-        { x: 0.80, y: 0.30 }
-    ];
+        { x: 0.25, y: 0.25 },
+        { x: 0.5, y: 0.15 },
+        { x: 0.75, y: 0.25 },
+        { x: 0.75, y: 0.55 }
+    ].map((p, i) => ({
+        x: p.x * size,
+        y: p.y * size,
+        title: titles[i]
+    }));
 }
 
 function drawConstellation() {
-
     const size = Math.min(window.innerWidth * 0.8, 420);
 
     constellationCanvas.width = size;
     constellationCanvas.height = size;
 
     constellationCtx.clearRect(0, 0, size, size);
-
     clickableStars = [];
 
-    const points = [
-        { x: 0.5, y: 0.88, title: "Start of Us ❤️" },
-        { x: 0.78, y: 0.62, title: "First Memory" },
-        { x: 0.72, y: 0.28, title: "Your Laugh" },
-        { x: 0.5, y: 0.18, title: "Our Peak 💫" },
-        { x: 0.28, y: 0.28, title: "Late Night Talks" },
-        { x: 0.22, y: 0.62, title: "First Smile" }
-    ];
+    const points = getHeartPoints(size, [
+        "Start of Us ❤️",
+        "First Smile",
+        "Late Night Talks",
+        "Our Peak 💫",
+        "Your Laugh",
+        "First Memory"
+    ]);
 
-    const p = points.map(pt => ({
-        x: pt.x * size,
-        y: pt.y * size,
-        title: pt.title
-    }));
-
-    // -----------------------------
-    // DRAW SMOOTH HEART PATH (BEZIER)
-    // -----------------------------
-    constellationCtx.strokeStyle = 'rgba(255,255,255,0.22)';
+    /* smooth heart curve */
+    constellationCtx.strokeStyle = 'rgba(255,255,255,0.25)';
     constellationCtx.lineWidth = 2;
     constellationCtx.beginPath();
 
-    // start at first point
-    constellationCtx.moveTo(p[0].x, p[0].y);
+    constellationCtx.moveTo(points[0].x, points[0].y);
 
-    for (let i = 0; i < p.length; i++) {
-
-        const current = p[i];
-        const next = p[(i + 1) % p.length];
-
-        // control point = midpoint (smooth curve effect)
-        const cx = (current.x + next.x) / 2;
-        const cy = (current.y + next.y) / 2;
-
-        constellationCtx.quadraticCurveTo(
-            current.x,
-            current.y,
-            cx,
-            cy
-        );
+    for (let i = 1; i < points.length; i++) {
+        const midX = (points[i - 1].x + points[i].x) / 2;
+        const midY = (points[i - 1].y + points[i].y) / 2;
+        constellationCtx.quadraticCurveTo(points[i - 1].x, points[i - 1].y, midX, midY);
     }
 
-    constellationCtx.closePath();
     constellationCtx.stroke();
 
-    // -----------------------------
-    // DRAW STARS + HIT AREAS
-    // -----------------------------
-    p.forEach(pt => {
-
-        const glow = constellationCtx.createRadialGradient(
-            pt.x, pt.y, 0,
-            pt.x, pt.y, 24
-        );
+    /* stars */
+    points.forEach(p => {
+        const glow = constellationCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 22);
 
         glow.addColorStop(0, 'rgba(255,255,210,0.95)');
         glow.addColorStop(1, 'rgba(255,255,210,0)');
 
         constellationCtx.fillStyle = glow;
         constellationCtx.beginPath();
-        constellationCtx.arc(pt.x, pt.y, 18, 0, Math.PI * 2);
+        constellationCtx.arc(p.x, p.y, 18, 0, Math.PI * 2);
         constellationCtx.fill();
 
         constellationCtx.fillStyle = '#fff7cc';
         constellationCtx.beginPath();
-        constellationCtx.arc(pt.x, pt.y, 6, 0, Math.PI * 2);
+        constellationCtx.arc(p.x, p.y, 6, 0, Math.PI * 2);
         constellationCtx.fill();
 
-        clickableStars.push({
-            x: pt.x,
-            y: pt.y,
-            r: 24,
-            title: pt.title
-        });
+        clickableStars.push({ ...p, r: 25 });
     });
 }
 
 /* CLICK POPUP */
 constellationCanvas.addEventListener('click', (e) => {
-
     const rect = constellationCanvas.getBoundingClientRect();
 
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    clickableStars.forEach(star => {
+    clickableStars.forEach(s => {
+        const d = Math.hypot(x - s.x, y - s.y);
 
-        const dx = x - star.x;
-        const dy = y - star.y;
-
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < star.r) {
-
-            starPopup.textContent = star.title;
-            starPopup.style.left = `${e.clientX}px`;
-            starPopup.style.top = `${e.clientY}px`;
+        if (d < s.r) {
+            starPopup.textContent = s.title;
+            starPopup.style.left = e.clientX + 'px';
+            starPopup.style.top = e.clientY + 'px';
             starPopup.style.display = 'block';
 
-            clearTimeout(window._t);
-            window._t = setTimeout(() => {
+            clearTimeout(window.__t);
+            window.__t = setTimeout(() => {
                 starPopup.style.display = 'none';
-            }, 2000);
+            }, 1500);
         }
     });
 });
 
-
-/* =========================================
-   REPLAY
-========================================= */
-
+/* REPLAY */
 replayBtn.addEventListener('click', () => {
-
     constellationModal.classList.add('hidden');
-
     collectedStars = [];
     gameComplete = false;
-
     starsLeftSpan.textContent = totalStars;
-
-    resetMoonPosition();
+    resetBucket();
 
     currentFallingStar = new FallingStar(memories[0]);
     starActive = true;
 });
 
-
-/* =========================================
-   MUSIC
-========================================= */
-
+/* MUSIC */
 document.addEventListener('click', () => {
     if (!bgMusic) return;
     bgMusic.volume = 0.45;
     bgMusic.play().catch(() => {});
 }, { once: true });
 
-
-/* =========================================
-   START GAME
-========================================= */
-
+/* START */
 currentFallingStar = new FallingStar(memories[0]);
 starActive = true;
 
-
-/* =========================================
-   GAME LOOP
-========================================= */
-
+/* LOOP */
 function gameLoop() {
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (currentFallingStar && starActive && !gameComplete) {
