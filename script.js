@@ -27,16 +27,12 @@ const replayBtn =
     document.getElementById('replay-button');
 
 
-
 /* =========================================
    DEVICE
 ========================================= */
 
 const isMobile =
-    /Android|iPhone|iPad|iPod|Tablet/i.test(
-        navigator.userAgent
-    );
-
+    /Android|iPhone|iPad|iPod|Tablet/i.test(navigator.userAgent);
 
 
 /* =========================================
@@ -51,15 +47,10 @@ function setupResponsiveSizes() {
     const w = window.innerWidth;
 
     if (isMobile) {
-
         bucketWidth = w * 0.22;
-
         starSize = w * 0.045;
-
     } else {
-
         bucketWidth = w * 0.11;
-
         starSize = w * 0.02;
     }
 
@@ -70,39 +61,26 @@ function setupResponsiveSizes() {
 setupResponsiveSizes();
 
 
-
 /* =========================================
    CANVAS
 ========================================= */
 
 function resizeCanvas() {
-
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-
     setupResponsiveSizes();
 }
 
 resizeCanvas();
 
-window.addEventListener(
-    'resize',
-    resizeCanvas
-);
-
+window.addEventListener('resize', resizeCanvas);
 
 
 /* =========================================
    TIME COUNTER
 ========================================= */
 
-const messageDate = new Date(
-    2026,
-    4,
-    24,
-    17,
-    20
-);
+const messageDate = new Date(2026, 4, 24, 17, 20);
 
 function getTimePassed() {
 
@@ -110,23 +88,13 @@ function getTimePassed() {
 
     const diff = now - messageDate;
 
-    const totalMinutes =
-        Math.floor(diff / (1000 * 60));
-
-    const days =
-        Math.floor(totalMinutes / (60 * 24));
-
-    const hours =
-        Math.floor(
-            (totalMinutes % (60 * 24)) / 60
-        );
-
-    const mins =
-        totalMinutes % 60;
+    const totalMinutes = Math.floor(diff / (1000 * 60));
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const mins = totalMinutes % 60;
 
     return `${days} days, ${hours} hours, ${mins} minutes`;
 }
-
 
 
 /* =========================================
@@ -134,13 +102,11 @@ function getTimePassed() {
 ========================================= */
 
 memories.forEach(memory => {
-
     memory.message = memory.message.replace(
         /\[TIME_PASSED\]/g,
         getTimePassed()
     );
 });
-
 
 
 /* =========================================
@@ -158,85 +124,49 @@ let gameComplete = false;
 let starActive = false;
 
 
-
 /* =========================================
    MOON POSITION
 ========================================= */
 
 let bucketX = window.innerWidth / 2;
-
 let bucketY = window.innerHeight * 0.82;
 
-
-
 function resetMoonPosition() {
-
     bucketX = window.innerWidth / 2;
-
     bucketY = window.innerHeight * 0.82;
-
     updateBucketPosition();
 }
 
-
-
 function updateBucketPosition() {
-
     bucket.style.left = `${bucketX}px`;
-
     bucket.style.top = `${bucketY}px`;
 }
 
 resetMoonPosition();
 
 
-
 /* =========================================
-   DESKTOP CONTROLS
+   CONTROLS
 ========================================= */
 
 document.addEventListener('mousemove', (e) => {
-
     if (isMobile) return;
-
-    if (messageModal.classList.contains('hidden') === false)
-        return;
+    if (!messageModal.classList.contains('hidden')) return;
 
     bucketX = e.clientX;
-
     bucketY = e.clientY;
-
     updateBucketPosition();
 });
 
+document.addEventListener('touchmove', (e) => {
+    if (!isMobile) return;
+    if (!messageModal.classList.contains('hidden')) return;
 
-
-/* =========================================
-   MOBILE CONTROLS
-========================================= */
-
-document.addEventListener(
-    'touchmove',
-    (e) => {
-
-        if (!isMobile) return;
-
-        if (
-            messageModal.classList.contains('hidden') === false
-        )
-            return;
-
-        const touch = e.touches[0];
-
-        bucketX = touch.clientX;
-
-        bucketY = touch.clientY;
-
-        updateBucketPosition();
-    },
-    { passive: true }
-);
-
+    const touch = e.touches[0];
+    bucketX = touch.clientX;
+    bucketY = touch.clientY;
+    updateBucketPosition();
+}, { passive: true });
 
 
 /* =========================================
@@ -246,130 +176,71 @@ document.addEventListener(
 class FallingStar {
 
     constructor(memoryData) {
-
         this.memoryData = memoryData;
-
         this.reset();
     }
 
     reset() {
 
-        /* SPAWN TOP 1/3 */
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * (canvas.height * 0.33);
 
-        this.x =
-            Math.random() * canvas.width;
-
-        this.y =
-            Math.random() *
-            (canvas.height * 0.33);
-
-
-
-        /* EXIT LEFT OR RIGHT */
-
-        const exitLeft =
-            Math.random() < 0.5;
-
-        const targetX =
-            exitLeft
-                ? -250
-                : canvas.width + 250;
-
-        const targetY =
-            canvas.height * 0.75;
-
-
+        const exitLeft = Math.random() < 0.5;
+        const targetX = exitLeft ? -250 : canvas.width + 250;
+        const targetY = canvas.height * 0.75;
 
         const dx = targetX - this.x;
         const dy = targetY - this.y;
 
-        const dist =
-            Math.sqrt(dx * dx + dy * dy);
-
-
-
-        const speed =
-            2 + Math.random() * 2;
-
-
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const speed = 2 + Math.random() * 2;
 
         this.vx = (dx / dist) * speed;
         this.vy = (dy / dist) * speed;
 
         this.opacity = 0;
-
         this.fadeIn = true;
-
         this.size = starSize;
-
-        this.pulse =
-            Math.random() * Math.PI * 2;
+        this.pulse = Math.random() * Math.PI * 2;
     }
 
     update() {
 
         this.pulse += 0.05;
 
-
-
-        /* FADE IN */
-
         if (this.fadeIn) {
-
             this.opacity += 0.015;
-
             if (this.opacity >= 1) {
-
                 this.opacity = 1;
-
                 this.fadeIn = false;
             }
-
             return;
         }
-
-
 
         this.x += this.vx;
         this.y += this.vy;
 
-
-
-        /* MISSED */
-
         if (
-
             this.x < -300 ||
-
             this.x > canvas.width + 300 ||
-
             this.y > canvas.height * 0.76
-
         ) {
-
             this.reset();
         }
 
-
-
         if (this.checkCollision()) {
-
             this.catchStar();
         }
     }
 
     checkCollision() {
-
-        const rect =
-            bucket.getBoundingClientRect();
+        const rect = bucket.getBoundingClientRect();
 
         return (
-
             this.x > rect.left &&
             this.x < rect.right &&
             this.y > rect.top &&
             this.y < rect.bottom
-
         );
     }
 
@@ -377,15 +248,12 @@ class FallingStar {
 
         starActive = false;
 
-        collectedStars.push(
-            this.memoryData
-        );
+        collectedStars.push(this.memoryData);
 
         starsLeftSpan.textContent =
             totalStars - collectedStars.length;
 
         if (collectedStars.length === 1) {
-
             hintText.classList.add('hidden');
         }
 
@@ -394,52 +262,23 @@ class FallingStar {
 
     draw(ctx) {
 
-        const pulse =
-            Math.sin(this.pulse) * 0.3 + 0.7;
+        const pulse = Math.sin(this.pulse) * 0.3 + 0.7;
 
         ctx.save();
-
         ctx.globalAlpha = this.opacity;
-
         ctx.translate(this.x, this.y);
 
-
-
-        const glow =
-            ctx.createRadialGradient(
-                0,
-                0,
-                0,
-                0,
-                0,
-                this.size * 2
-            );
-
-        glow.addColorStop(
-            0,
-            'rgba(255,255,220,0.9)'
+        const glow = ctx.createRadialGradient(
+            0, 0, 0, 0, 0, this.size * 2
         );
 
-        glow.addColorStop(
-            1,
-            'rgba(255,255,220,0)'
-        );
+        glow.addColorStop(0, 'rgba(255,255,220,0.9)');
+        glow.addColorStop(1, 'rgba(255,255,220,0)');
 
         ctx.fillStyle = glow;
-
         ctx.beginPath();
-
-        ctx.arc(
-            0,
-            0,
-            this.size * 2,
-            0,
-            Math.PI * 2
-        );
-
+        ctx.arc(0, 0, this.size * 2, 0, Math.PI * 2);
         ctx.fill();
-
-
 
         this.drawStarShape(
             ctx,
@@ -453,59 +292,27 @@ class FallingStar {
         ctx.restore();
     }
 
-    drawStarShape(
-        ctx,
-        cx,
-        cy,
-        outerR,
-        innerR,
-        points
-    ) {
+    drawStarShape(ctx, cx, cy, outerR, innerR, points) {
 
-        ctx.fillStyle =
-            'rgba(255,255,240,0.95)';
-
+        ctx.fillStyle = 'rgba(255,255,240,0.95)';
         ctx.beginPath();
 
-        for (
-            let i = 0;
-            i < points * 2;
-            i++
-        ) {
+        for (let i = 0; i < points * 2; i++) {
 
-            const radius =
-                i % 2 === 0
-                    ? outerR
-                    : innerR;
+            const radius = i % 2 === 0 ? outerR : innerR;
+            const angle = (i * Math.PI) / points - Math.PI / 2;
 
-            const angle =
-                (i * Math.PI) / points -
-                Math.PI / 2;
+            const x = cx + Math.cos(angle) * radius;
+            const y = cy + Math.sin(angle) * radius;
 
-            const x =
-                cx +
-                Math.cos(angle) * radius;
-
-            const y =
-                cy +
-                Math.sin(angle) * radius;
-
-            if (i === 0) {
-
-                ctx.moveTo(x, y);
-
-            } else {
-
-                ctx.lineTo(x, y);
-            }
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
         }
 
         ctx.closePath();
-
         ctx.fill();
     }
 }
-
 
 
 /* =========================================
@@ -518,14 +325,11 @@ function showMessage(memoryData) {
         <h3 style="color:#ffd700;margin-bottom:12px;">
             ${memoryData.title}
         </h3>
-
         ${memoryData.message.replace(/\n/g, '<br>')}
     `;
 
     messageModal.classList.remove('hidden');
 }
-
-
 
 function closeCurrentMessage() {
 
@@ -533,114 +337,114 @@ function closeCurrentMessage() {
 
     resetMoonPosition();
 
-
-
-    if (
-        collectedStars.length >= totalStars
-    ) {
-
+    if (collectedStars.length >= totalStars) {
         gameComplete = true;
-
         showConstellation();
-
     } else {
-
         currentFallingStar =
-            new FallingStar(
-                memories[collectedStars.length]
-            );
-
+            new FallingStar(memories[collectedStars.length]);
         starActive = true;
     }
 }
 
-
-
-/* IMPORTANT FIX */
-
-closeMessageBtn.addEventListener(
-    'click',
-    closeCurrentMessage
-);
-
+closeMessageBtn.addEventListener('click', closeCurrentMessage);
 
 
 /* =========================================
-   CONSTELLATION
+   CONSTELLATION (HEART + INTERACTIVE STARS)
 ========================================= */
 
+let clickableStars = [];
+
 function showConstellation() {
-
-    constellationModal.classList.remove(
-        'hidden'
-    );
-
+    constellationModal.classList.remove('hidden');
     drawConstellation();
 }
 
-
-
 function drawConstellation() {
 
-    const size = Math.min(
-        window.innerWidth * 0.8,
-        420
-    );
+    const size = Math.min(window.innerWidth * 0.8, 420);
 
     constellationCanvas.width = size;
     constellationCanvas.height = size;
 
-    constellationCtx.clearRect(
-        0,
-        0,
-        size,
-        size
-    );
+    constellationCtx.clearRect(0, 0, size, size);
 
-
+    clickableStars = [];
 
     const points = [
-
-        { x: 0.5, y: 0.82 },
-
-        { x: 0.2, y: 0.52 },
-
-        { x: 0.28, y: 0.22 },
-
-        { x: 0.5, y: 0.12 },
-
-        { x: 0.72, y: 0.22 },
-
-        { x: 0.8, y: 0.52 }
+        { x: 0.5, y: 0.82, title: "Start of Us ❤️" },
+        { x: 0.2, y: 0.52, title: "First Smile" },
+        { x: 0.28, y: 0.22, title: "Late Night Talks" },
+        { x: 0.5, y: 0.12, title: "Our Peak 💫" },
+        { x: 0.72, y: 0.22, title: "Your Laugh" },
+        { x: 0.8, y: 0.52, title: "First Memory" }
     ];
 
-
-
-    constellationCtx.strokeStyle =
-        'rgba(255,255,255,0.25)';
-
+    constellationCtx.strokeStyle = 'rgba(255,255,255,0.22)';
     constellationCtx.lineWidth = 2;
 
     constellationCtx.beginPath();
-
-    constellationCtx.moveTo(
-        points[0].x * size,
-        points[0].y * size
-    );
+    constellationCtx.moveTo(points[0].x * size, points[0].y * size);
 
     for (let i = 1; i < points.length; i++) {
-
         constellationCtx.lineTo(
             points[i].x * size,
             points[i].y * size
         );
     }
 
-    constellationCtx.closePath();
-
     constellationCtx.stroke();
+
+    points.forEach(p => {
+
+        const x = p.x * size;
+        const y = p.y * size;
+
+        const glow = constellationCtx.createRadialGradient(x, y, 0, x, y, 22);
+
+        glow.addColorStop(0, 'rgba(255,255,210,0.95)');
+        glow.addColorStop(1, 'rgba(255,255,210,0)');
+
+        constellationCtx.fillStyle = glow;
+        constellationCtx.beginPath();
+        constellationCtx.arc(x, y, 18, 0, Math.PI * 2);
+        constellationCtx.fill();
+
+        constellationCtx.fillStyle = '#fff7cc';
+        constellationCtx.beginPath();
+        constellationCtx.arc(x, y, 6, 0, Math.PI * 2);
+        constellationCtx.fill();
+
+        clickableStars.push({
+            x,
+            y,
+            r: 24,
+            title: p.title
+        });
+    });
 }
 
+/* CLICK INTERACTION */
+constellationCanvas.addEventListener('click', (e) => {
+
+    const rect = constellationCanvas.getBoundingClientRect();
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    clickableStars.forEach(star => {
+
+        const dx = x - star.x;
+        const dy = y - star.y;
+
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < star.r) {
+            alert(star.title);
+        }
+    });
+});
 
 
 /* =========================================
@@ -649,71 +453,37 @@ function drawConstellation() {
 
 replayBtn.addEventListener('click', () => {
 
-    constellationModal.classList.add(
-        'hidden'
-    );
+    constellationModal.classList.add('hidden');
 
     collectedStars = [];
-
     gameComplete = false;
 
-    starsLeftSpan.textContent =
-        totalStars;
+    starsLeftSpan.textContent = totalStars;
 
     resetMoonPosition();
 
-    currentFallingStar =
-        new FallingStar(memories[0]);
-
+    currentFallingStar = new FallingStar(memories[0]);
     starActive = true;
 });
-
 
 
 /* =========================================
    MUSIC
 ========================================= */
 
-function startMusic() {
-
+document.addEventListener('click', () => {
     if (!bgMusic) return;
-
     bgMusic.volume = 0.45;
-
     bgMusic.play().catch(() => {});
-
-    document.removeEventListener(
-        'click',
-        startMusic
-    );
-
-    document.removeEventListener(
-        'touchstart',
-        startMusic
-    );
-}
-
-document.addEventListener(
-    'click',
-    startMusic
-);
-
-document.addEventListener(
-    'touchstart',
-    startMusic
-);
-
+}, { once: true });
 
 
 /* =========================================
-   START FIRST STAR
+   START GAME
 ========================================= */
 
-currentFallingStar =
-    new FallingStar(memories[0]);
-
+currentFallingStar = new FallingStar(memories[0]);
 starActive = true;
-
 
 
 /* =========================================
@@ -722,23 +492,10 @@ starActive = true;
 
 function gameLoop() {
 
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-
-
-    if (
-        currentFallingStar &&
-        starActive &&
-        !gameComplete
-    ) {
-
+    if (currentFallingStar && starActive && !gameComplete) {
         currentFallingStar.update();
-
         currentFallingStar.draw(ctx);
     }
 
