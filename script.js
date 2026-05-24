@@ -111,8 +111,6 @@ let bucketX = window.innerWidth / 2;
 
 let bucketY = window.innerHeight - 140;
 
-let dragging = false;
-
 
 
 function updateBucketPosition() {
@@ -127,45 +125,55 @@ updateBucketPosition();
 
 
 
-/* DESKTOP */
-
-bucket.addEventListener('mousedown', () => {
-
-    dragging = true;
-
-});
-
-
-
-document.addEventListener('mouseup', () => {
-
-    dragging = false;
-
-});
-
-
+/* =================================
+   DESKTOP + LAPTOP TRACKPAD
+================================= */
 
 document.addEventListener('mousemove', (e) => {
-
-    if (!dragging) return;
 
     if (gameComplete) return;
 
 
 
-    bucketX = e.clientX;
-
-    bucketY = e.clientY;
+    const rect = bucket.getBoundingClientRect();
 
 
 
-    updateBucketPosition();
+    const centerX = rect.left + rect.width / 2;
+
+    const centerY = rect.top + rect.height / 2;
+
+
+
+    const distance = Math.sqrt(
+
+        (e.clientX - centerX) ** 2 +
+
+        (e.clientY - centerY) ** 2
+
+    );
+
+
+
+    /* only move when cursor is near moon */
+
+    if (distance < 180) {
+
+        bucketX = e.clientX;
+
+        bucketY = e.clientY;
+
+        updateBucketPosition();
+
+    }
 
 });
 
 
 
-/* MOBILE */
+/* =================================
+   MOBILE TOUCH DRAG
+================================= */
 
 bucket.addEventListener('touchmove', (e) => {
 
@@ -201,7 +209,7 @@ class FallingStar {
 
     reset() {
 
-        /* SPAWN ONLY IN TOP 1/3 */
+        /* RANDOM SPAWN IN TOP 1/3 */
 
         this.x = Math.random() * canvas.width;
 
@@ -209,13 +217,13 @@ class FallingStar {
 
 
 
-        /* RANDOM LEFT OR RIGHT EXIT */
+        /* EXIT LEFT OR RIGHT */
 
         const exitSide = Math.random() < 0.5 ? -1 : 1;
 
 
 
-        /* STAR SHOULD EXIT SCREEN
+        /* STAR EXITS SCREEN
            AROUND 3/4 HEIGHT */
 
         const targetY = canvas.height * 0.75;
@@ -223,8 +231,8 @@ class FallingStar {
 
 
         const targetX = exitSide === -1
-            ? -250
-            : canvas.width + 250;
+            ? -300
+            : canvas.width + 300;
 
 
 
@@ -270,7 +278,7 @@ class FallingStar {
 
 
 
-        /* FADE IN EFFECT */
+        /* FADE IN */
 
         if (this.fadeIn) {
 
@@ -287,6 +295,7 @@ class FallingStar {
             }
 
             return;
+
         }
 
 
@@ -297,13 +306,13 @@ class FallingStar {
 
 
 
-        /* IF STAR MISSED */
+        /* STAR MISSED */
 
         if (
 
-            this.x < -300 ||
+            this.x < -350 ||
 
-            this.x > canvas.width + 300 ||
+            this.x > canvas.width + 350 ||
 
             this.y > canvas.height * 0.76
 
