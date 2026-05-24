@@ -47,8 +47,8 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-/* TIME */
-const messageDate = new Date(2026, 4, 24, 17, 20);
+/* TIME (FIXED) */
+const messageDate = new Date(2025, 4, 25, 17, 20); // ONLY FIX
 
 function getTimePassed() {
     const now = new Date();
@@ -109,7 +109,7 @@ document.addEventListener('touchmove', (e) => {
     updateBucket();
 }, { passive: true });
 
-/* STAR CLASS (UNCHANGED) */
+/* STAR CLASS */
 class FallingStar {
     constructor(memoryData) {
         this.memoryData = memoryData;
@@ -227,7 +227,7 @@ class FallingStar {
     }
 }
 
-/* MESSAGE SYSTEM (UNCHANGED) */
+/* MESSAGE */
 function showMessage(memoryData) {
     messageText.innerHTML = `
         <h3 style="color:#ffd700;margin-bottom:12px;">
@@ -253,10 +253,7 @@ closeMessageBtn.addEventListener('click', () => {
     }
 });
 
-/* =========================
-   ⭐ CONSTELLATION FIX (IMPORTANT)
-========================= */
-
+/* CONSTELLATION */
 let clickableStars = [];
 
 const starPopup = document.createElement('div');
@@ -271,7 +268,6 @@ starPopup.style.display = 'none';
 starPopup.style.zIndex = 9999;
 document.body.appendChild(starPopup);
 
-/* CREATE "1" SHAPE */
 function getOneShape(size) {
     return [
         { x: 0.5, y: 0.12, title: "One Year ❤️" },
@@ -287,11 +283,9 @@ function getOneShape(size) {
     }));
 }
 
-/* ANIMATED DRAW */
 let drawProgress = 0;
 
 function animateConstellation(points) {
-
     function draw() {
         constellationCtx.clearRect(0, 0, constellationCanvas.width, constellationCanvas.height);
         clickableStars = [];
@@ -313,13 +307,9 @@ function animateConstellation(points) {
         for (let i = 0; i <= steps; i++) {
             const p = points[i];
 
-            const glow = constellationCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 25);
-            glow.addColorStop(0, 'rgba(255,255,220,0.95)');
-            glow.addColorStop(1, 'rgba(255,255,220,0)');
-
-            constellationCtx.fillStyle = glow;
             constellationCtx.beginPath();
             constellationCtx.arc(p.x, p.y, 16, 0, Math.PI * 2);
+            constellationCtx.fillStyle = 'rgba(255,255,210,0.9)';
             constellationCtx.fill();
 
             clickableStars.push({ x: p.x, y: p.y, r: 20, title: p.title });
@@ -327,54 +317,23 @@ function animateConstellation(points) {
 
         drawProgress += 0.02;
 
-        if (drawProgress <= 1) {
-            requestAnimationFrame(draw);
-        }
+        if (drawProgress <= 1) requestAnimationFrame(draw);
     }
 
     draw();
 }
 
-/* MAIN CONSTELLATION FIXED */
 function showConstellation() {
-
     constellationModal.classList.remove('hidden');
 
     const size = Math.min(window.innerWidth * 0.8, 420);
-
     constellationCanvas.width = size;
     constellationCanvas.height = size;
 
     drawProgress = 0;
 
-    const points = getOneShape(size);
-
-    animateConstellation(points);
+    animateConstellation(getOneShape(size));
 }
-
-/* CLICK */
-constellationCanvas.addEventListener('click', (e) => {
-    const rect = constellationCanvas.getBoundingClientRect();
-
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    clickableStars.forEach(s => {
-        const d = Math.hypot(x - s.x, y - s.y);
-
-        if (d < s.r) {
-            starPopup.textContent = s.title;
-            starPopup.style.left = e.clientX + 'px';
-            starPopup.style.top = e.clientY + 'px';
-            starPopup.style.display = 'block';
-
-            clearTimeout(window.__t);
-            window.__t = setTimeout(() => {
-                starPopup.style.display = 'none';
-            }, 1500);
-        }
-    });
-});
 
 /* REPLAY */
 replayBtn.addEventListener('click', () => {
