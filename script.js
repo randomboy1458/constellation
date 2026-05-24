@@ -26,7 +26,7 @@ const replayBtn = document.getElementById('replay-button');
 
 
 /* =========================================
-   RESPONSIVE DEVICE DETECTION
+   DEVICE DETECTION
 ========================================= */
 
 const isMobile =
@@ -41,31 +41,28 @@ const isMobile =
 ========================================= */
 
 let bucketWidth;
-let bucketHeight;
 let starSize;
 
 function setupResponsiveSizes() {
 
     const w = window.innerWidth;
-    const h = window.innerHeight;
 
     if (isMobile) {
 
         bucketWidth = w * 0.22;
-        bucketHeight = bucketWidth;
 
         starSize = w * 0.045;
 
     } else {
 
         bucketWidth = w * 0.12;
-        bucketHeight = bucketWidth;
 
         starSize = w * 0.02;
     }
 
     bucket.style.width = `${bucketWidth}px`;
-    bucket.style.height = `auto`;
+
+    bucket.style.height = 'auto';
 }
 
 setupResponsiveSizes();
@@ -166,11 +163,11 @@ let bucketX = window.innerWidth / 2;
 
 let bucketY = window.innerHeight * 0.82;
 
-let dragging = false;
-
 let desktopLocked = false;
 
-let lastTap = 0;
+let lastClickTime = 0;
+
+
 
 function resetMoonPosition() {
 
@@ -181,6 +178,8 @@ function resetMoonPosition() {
     updateBucketPosition();
 }
 
+
+
 function updateBucketPosition() {
 
     bucket.style.left = `${bucketX}px`;
@@ -188,20 +187,41 @@ function updateBucketPosition() {
     bucket.style.top = `${bucketY}px`;
 }
 
+
+
 resetMoonPosition();
 
 
 
 /* =========================================
-   DESKTOP / TOUCHPAD
-   DOUBLE CLICK TO ENABLE MOVE
+   LAPTOP / DESKTOP
 ========================================= */
 
-bucket.addEventListener('dblclick', () => {
+bucket.addEventListener('click', () => {
 
-    desktopLocked = !desktopLocked;
+    if (isMobile) return;
 
+    const now = Date.now();
+
+    if (now - lastClickTime < 350) {
+
+        desktopLocked = !desktopLocked;
+
+        if (desktopLocked) {
+
+            bucket.style.filter =
+                'drop-shadow(0 0 18px rgba(255,255,255,0.9))';
+
+        } else {
+
+            bucket.style.filter = 'none';
+        }
+    }
+
+    lastClickTime = now;
 });
+
+
 
 document.addEventListener('mousemove', (e) => {
 
@@ -216,7 +236,6 @@ document.addEventListener('mousemove', (e) => {
     bucketY = e.clientY;
 
     updateBucketPosition();
-
 });
 
 
@@ -225,23 +244,11 @@ document.addEventListener('mousemove', (e) => {
    MOBILE / TABLET
 ========================================= */
 
-bucket.addEventListener('touchstart', () => {
-
-    dragging = true;
-
-});
-
-document.addEventListener('touchend', () => {
-
-    dragging = false;
-
-});
-
 document.addEventListener(
     'touchmove',
     (e) => {
 
-        if (!dragging) return;
+        if (!isMobile) return;
 
         if (gameComplete) return;
 
@@ -252,9 +259,8 @@ document.addEventListener(
         bucketY = touch.clientY;
 
         updateBucketPosition();
-
     },
-    { passive: false }
+    { passive: true }
 );
 
 
@@ -285,7 +291,7 @@ class FallingStar {
 
 
 
-        /* EXIT LEFT OR RIGHT */
+        /* RANDOM EXIT */
 
         const exitLeft =
             Math.random() < 0.5;
@@ -341,7 +347,7 @@ class FallingStar {
 
 
 
-        /* SPAWN FADE */
+        /* FADE IN */
 
         if (this.fadeIn) {
 
@@ -365,7 +371,7 @@ class FallingStar {
 
 
 
-        /* MISSED STAR -> RESPAWN */
+        /* MISSED */
 
         if (
 
@@ -505,7 +511,7 @@ class FallingStar {
 
 
 
-        /* STAR */
+        /* STAR SHAPE */
 
         this.drawStarShape(
             ctx,
