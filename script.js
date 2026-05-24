@@ -109,7 +109,7 @@ document.addEventListener('touchmove', (e) => {
     updateBucket();
 }, { passive: true });
 
-/* STAR CLASS */
+/* STAR CLASS (UNCHANGED) */
 class FallingStar {
     constructor(memoryData) {
         this.memoryData = memoryData;
@@ -227,7 +227,7 @@ class FallingStar {
     }
 }
 
-/* MESSAGE */
+/* MESSAGE SYSTEM (UNCHANGED) */
 function showMessage(memoryData) {
     messageText.innerHTML = `
         <h3 style="color:#ffd700;margin-bottom:12px;">
@@ -254,12 +254,12 @@ closeMessageBtn.addEventListener('click', () => {
 });
 
 /* =========================
-   CONSTELLATION "1" DRAW ANIMATION
+   ⭐ CONSTELLATION FIX (IMPORTANT)
 ========================= */
 
 let clickableStars = [];
-const starPopup = document.createElement('div');
 
+const starPopup = document.createElement('div');
 starPopup.style.position = 'fixed';
 starPopup.style.background = 'rgba(0,0,0,0.75)';
 starPopup.style.color = '#fff';
@@ -269,135 +269,97 @@ starPopup.style.fontSize = '12px';
 starPopup.style.pointerEvents = 'none';
 starPopup.style.display = 'none';
 starPopup.style.zIndex = 9999;
-
 document.body.appendChild(starPopup);
 
-/* "1" SHAPE */
-function getOneShape(size, titles) {
-    const cx = size * 0.5;
-
-    const points = [
-        { x: cx, y: size * 0.12 },
-        { x: cx, y: size * 0.25 },
-        { x: cx, y: size * 0.38 },
-        { x: cx, y: size * 0.52 },
-        { x: cx, y: size * 0.68 },
-        { x: cx, y: size * 0.86 }
-    ];
-
-    return points.map((p, i) => ({
-        x: p.x,
-        y: p.y,
-        title: titles[i]
+/* CREATE "1" SHAPE */
+function getOneShape(size) {
+    return [
+        { x: 0.5, y: 0.12, title: "One Year ❤️" },
+        { x: 0.5, y: 0.25, title: "Memory 1" },
+        { x: 0.5, y: 0.40, title: "Memory 2" },
+        { x: 0.5, y: 0.55, title: "Memory 3" },
+        { x: 0.5, y: 0.70, title: "Memory 4" },
+        { x: 0.5, y: 0.85, title: "Forever Us" }
+    ].map(p => ({
+        x: p.x * size,
+        y: p.y * size,
+        title: p.title
     }));
 }
 
-/* ANIMATION STATE */
+/* ANIMATED DRAW */
 let drawProgress = 0;
-let animFrame = null;
 
-function animateOnePath(points) {
+function animateConstellation(points) {
 
-    let i = 0;
-    const total = points.length;
-
-    const drawStep = () => {
-
+    function draw() {
         constellationCtx.clearRect(0, 0, constellationCanvas.width, constellationCanvas.height);
-
         clickableStars = [];
 
-        /* glowing trail */
-        constellationCtx.strokeStyle = 'rgba(255,255,255,0.25)';
+        const steps = Math.floor(points.length * drawProgress);
+
+        constellationCtx.strokeStyle = 'rgba(255,255,255,0.3)';
         constellationCtx.lineWidth = 3;
         constellationCtx.beginPath();
 
         constellationCtx.moveTo(points[0].x, points[0].y);
 
-        const steps = Math.floor(total * drawProgress);
-
-        for (let j = 1; j <= steps; j++) {
-            constellationCtx.lineTo(points[j].x, points[j].y);
+        for (let i = 1; i <= steps; i++) {
+            constellationCtx.lineTo(points[i].x, points[i].y);
         }
 
         constellationCtx.stroke();
 
-        /* draw stars gradually */
-        for (let k = 0; k <= steps; k++) {
+        for (let i = 0; i <= steps; i++) {
+            const p = points[i];
 
-            const p = points[k];
-
-            const glow = constellationCtx.createRadialGradient(
-                p.x, p.y, 0,
-                p.x, p.y, 26
-            );
-
-            glow.addColorStop(0, 'rgba(255,255,210,0.95)');
-            glow.addColorStop(1, 'rgba(255,255,210,0)');
+            const glow = constellationCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 25);
+            glow.addColorStop(0, 'rgba(255,255,220,0.95)');
+            glow.addColorStop(1, 'rgba(255,255,220,0)');
 
             constellationCtx.fillStyle = glow;
             constellationCtx.beginPath();
-            constellationCtx.arc(p.x, p.y, 18, 0, Math.PI * 2);
+            constellationCtx.arc(p.x, p.y, 16, 0, Math.PI * 2);
             constellationCtx.fill();
 
-            constellationCtx.fillStyle = '#fff7cc';
-            constellationCtx.beginPath();
-            constellationCtx.arc(p.x, p.y, 6, 0, Math.PI * 2);
-            constellationCtx.fill();
-
-            clickableStars.push({
-                x: p.x,
-                y: p.y,
-                r: 25,
-                title: p.title
-            });
+            clickableStars.push({ x: p.x, y: p.y, r: 20, title: p.title });
         }
 
         drawProgress += 0.02;
 
         if (drawProgress <= 1) {
-            animFrame = requestAnimationFrame(drawStep);
+            requestAnimationFrame(draw);
         }
-    };
+    }
 
-    drawStep();
+    draw();
 }
 
-/* MAIN CONSTELLATION */
-function drawConstellation() {
+/* MAIN CONSTELLATION FIXED */
+function showConstellation() {
+
+    constellationModal.classList.remove('hidden');
 
     const size = Math.min(window.innerWidth * 0.8, 420);
 
     constellationCanvas.width = size;
     constellationCanvas.height = size;
 
-    constellationCtx.clearRect(0, 0, size, size);
-
     drawProgress = 0;
-    clickableStars = [];
 
-    const points = getOneShape(size, [
-        "One Year Together ❤️",
-        "First Spark",
-        "First Smile",
-        "Late Nights",
-        "Growing Strong",
-        "Forever Us"
-    ]);
+    const points = getOneShape(size);
 
-    animateOnePath(points);
+    animateConstellation(points);
 }
 
-/* CLICK POPUP */
+/* CLICK */
 constellationCanvas.addEventListener('click', (e) => {
-
     const rect = constellationCanvas.getBoundingClientRect();
 
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
     clickableStars.forEach(s => {
-
         const d = Math.hypot(x - s.x, y - s.y);
 
         if (d < s.r) {
@@ -414,11 +376,9 @@ constellationCanvas.addEventListener('click', (e) => {
     });
 });
 
-/* REPLAY FIX */
+/* REPLAY */
 replayBtn.addEventListener('click', () => {
-
     constellationModal.classList.add('hidden');
-
     collectedStars = [];
     gameComplete = false;
     starsLeftSpan.textContent = totalStars;
