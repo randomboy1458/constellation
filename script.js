@@ -391,49 +391,79 @@ function drawConstellation() {
 
     clickableStars = [];
 
-    const points = getHeartPoints(size);
+    const points = [
+        { x: 0.5, y: 0.88, title: "Start of Us ❤️" },
+        { x: 0.78, y: 0.62, title: "First Memory" },
+        { x: 0.72, y: 0.28, title: "Your Laugh" },
+        { x: 0.5, y: 0.18, title: "Our Peak 💫" },
+        { x: 0.28, y: 0.28, title: "Late Night Talks" },
+        { x: 0.22, y: 0.62, title: "First Smile" }
+    ];
 
-    // connect line
-    constellationCtx.strokeStyle = 'rgba(255,255,255,0.18)';
+    const p = points.map(pt => ({
+        x: pt.x * size,
+        y: pt.y * size,
+        title: pt.title
+    }));
+
+    // -----------------------------
+    // DRAW SMOOTH HEART PATH (BEZIER)
+    // -----------------------------
+    constellationCtx.strokeStyle = 'rgba(255,255,255,0.22)';
     constellationCtx.lineWidth = 2;
     constellationCtx.beginPath();
 
-    points.forEach((p, i) => {
-        const x = p.x * size;
-        const y = p.y * size;
-        if (i === 0) constellationCtx.moveTo(x, y);
-        else constellationCtx.lineTo(x, y);
-    });
+    // start at first point
+    constellationCtx.moveTo(p[0].x, p[0].y);
 
+    for (let i = 0; i < p.length; i++) {
+
+        const current = p[i];
+        const next = p[(i + 1) % p.length];
+
+        // control point = midpoint (smooth curve effect)
+        const cx = (current.x + next.x) / 2;
+        const cy = (current.y + next.y) / 2;
+
+        constellationCtx.quadraticCurveTo(
+            current.x,
+            current.y,
+            cx,
+            cy
+        );
+    }
+
+    constellationCtx.closePath();
     constellationCtx.stroke();
 
-    // only 6 memories
-    const mem = memories.slice(0, 6);
+    // -----------------------------
+    // DRAW STARS + HIT AREAS
+    // -----------------------------
+    p.forEach(pt => {
 
-    points.forEach((p, i) => {
+        const glow = constellationCtx.createRadialGradient(
+            pt.x, pt.y, 0,
+            pt.x, pt.y, 24
+        );
 
-        const x = p.x * size;
-        const y = p.y * size;
-
-        const glow = constellationCtx.createRadialGradient(x, y, 0, x, y, 22);
         glow.addColorStop(0, 'rgba(255,255,210,0.95)');
         glow.addColorStop(1, 'rgba(255,255,210,0)');
 
         constellationCtx.fillStyle = glow;
         constellationCtx.beginPath();
-        constellationCtx.arc(x, y, 18, 0, Math.PI * 2);
+        constellationCtx.arc(pt.x, pt.y, 18, 0, Math.PI * 2);
         constellationCtx.fill();
 
         constellationCtx.fillStyle = '#fff7cc';
         constellationCtx.beginPath();
-        constellationCtx.arc(x, y, 6, 0, Math.PI * 2);
+        constellationCtx.arc(pt.x, pt.y, 6, 0, Math.PI * 2);
         constellationCtx.fill();
 
         clickableStars.push({
-            x,
-            y,
-            r: 22,
-            title: mem[i].title
+            x: pt.x,
+            y: pt.y,
+            r: 24,
+            title: pt.title
         });
     });
 }
