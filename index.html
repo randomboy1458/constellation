@@ -5,10 +5,7 @@
 
     <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0, user-scalable=no"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
     <title>Constellation of Us ✨</title>
 
@@ -19,46 +16,34 @@
 <body>
 
     <!-- GAME CONTAINER -->
-
     <div id="game-container">
 
         <!-- BACKGROUND -->
-
         <div id="sky-background"></div>
 
         <!-- CANVAS -->
-
         <canvas id="game-canvas"></canvas>
 
         <!-- BUCKET -->
-
-        <img
-            id="bucket"
-            src="images/bucket.png"
-            alt="Bucket"
-        >
+        <img id="bucket" src="images/bucket.png" alt="Bucket">
 
         <!-- COUNTER -->
-
         <div id="stars-left">
-
             Stars Remaining:
             <span id="stars-count">6</span>
-
         </div>
 
         <!-- HINT -->
-
         <div id="hint-text">
-
             Catch the glowing stars ✨
-
         </div>
+
+        <!-- ⭐ STAR POPUP (NEW ADDITION) -->
+        <div id="star-popup"></div>
 
     </div>
 
     <!-- MEMORY MODAL -->
-
     <div id="message-modal" class="hidden">
 
         <div class="modal-overlay"></div>
@@ -66,17 +51,12 @@
         <div class="modal-content">
 
             <div class="modal-title">
-
                 ✨ A Memory ✨
-
             </div>
 
             <div id="message-text"></div>
 
-            <button
-                id="close-message"
-                type="button"
-            >
+            <button id="close-message" type="button">
                 I love you ❤️
             </button>
 
@@ -85,7 +65,6 @@
     </div>
 
     <!-- FINAL CONSTELLATION -->
-
     <div id="constellation-modal" class="hidden">
 
         <div class="modal-overlay"></div>
@@ -93,15 +72,11 @@
         <div class="constellation-content">
 
             <div class="constellation-title">
-
                 Our Constellation
-
             </div>
 
             <p class="constellation-subtitle">
-
-                journey through six beautiful memories 
-
+                journey through six beautiful memories
             </p>
 
             <canvas id="constellation-canvas"></canvas>
@@ -118,9 +93,7 @@
             </div>
 
             <button id="replay-button">
-
                 Watch Again ✨
-
             </button>
 
         </div>
@@ -128,9 +101,7 @@
     </div>
 
     <script src="memories.js"></script>
-
     <script src="script.js"></script>
 
 </body>
-
 </html>

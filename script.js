@@ -114,13 +114,9 @@ memories.forEach(memory => {
 ========================================= */
 
 let collectedStars = [];
-
 let totalStars = memories.length;
-
 let currentFallingStar = null;
-
 let gameComplete = false;
-
 let starActive = false;
 
 
@@ -351,14 +347,37 @@ closeMessageBtn.addEventListener('click', closeCurrentMessage);
 
 
 /* =========================================
-   CONSTELLATION (HEART + INTERACTIVE STARS)
+   CONSTELLATION (FIXED HEART + POPUP)
 ========================================= */
 
 let clickableStars = [];
+const starPopup = document.createElement('div');
+starPopup.style.position = 'fixed';
+starPopup.style.padding = '8px 12px';
+starPopup.style.background = 'rgba(0,0,0,0.75)';
+starPopup.style.color = '#fff';
+starPopup.style.borderRadius = '10px';
+starPopup.style.fontSize = '13px';
+starPopup.style.pointerEvents = 'none';
+starPopup.style.zIndex = 9999;
+starPopup.style.display = 'none';
+document.body.appendChild(starPopup);
 
 function showConstellation() {
     constellationModal.classList.remove('hidden');
     drawConstellation();
+}
+
+/* TRUE HEART SHAPE (6 STARS ONLY) */
+function getHeartPoints(size) {
+    return [
+        { x: 0.5, y: 0.82 },
+        { x: 0.25, y: 0.55 },
+        { x: 0.20, y: 0.30 },
+        { x: 0.35, y: 0.18 },
+        { x: 0.65, y: 0.18 },
+        { x: 0.80, y: 0.30 }
+    ];
 }
 
 function drawConstellation() {
@@ -372,37 +391,31 @@ function drawConstellation() {
 
     clickableStars = [];
 
-    const points = [
-        { x: 0.5, y: 0.82, title: "Start of Us ❤️" },
-        { x: 0.2, y: 0.52, title: "First Smile" },
-        { x: 0.28, y: 0.22, title: "Late Night Talks" },
-        { x: 0.5, y: 0.12, title: "Our Peak 💫" },
-        { x: 0.72, y: 0.22, title: "Your Laugh" },
-        { x: 0.8, y: 0.52, title: "First Memory" }
-    ];
+    const points = getHeartPoints(size);
 
-    constellationCtx.strokeStyle = 'rgba(255,255,255,0.22)';
+    // connect line
+    constellationCtx.strokeStyle = 'rgba(255,255,255,0.18)';
     constellationCtx.lineWidth = 2;
-
     constellationCtx.beginPath();
-    constellationCtx.moveTo(points[0].x * size, points[0].y * size);
 
-    for (let i = 1; i < points.length; i++) {
-        constellationCtx.lineTo(
-            points[i].x * size,
-            points[i].y * size
-        );
-    }
+    points.forEach((p, i) => {
+        const x = p.x * size;
+        const y = p.y * size;
+        if (i === 0) constellationCtx.moveTo(x, y);
+        else constellationCtx.lineTo(x, y);
+    });
 
     constellationCtx.stroke();
 
-    points.forEach(p => {
+    // only 6 memories
+    const mem = memories.slice(0, 6);
+
+    points.forEach((p, i) => {
 
         const x = p.x * size;
         const y = p.y * size;
 
         const glow = constellationCtx.createRadialGradient(x, y, 0, x, y, 22);
-
         glow.addColorStop(0, 'rgba(255,255,210,0.95)');
         glow.addColorStop(1, 'rgba(255,255,210,0)');
 
@@ -419,13 +432,13 @@ function drawConstellation() {
         clickableStars.push({
             x,
             y,
-            r: 24,
-            title: p.title
+            r: 22,
+            title: mem[i].title
         });
     });
 }
 
-/* CLICK INTERACTION */
+/* CLICK POPUP */
 constellationCanvas.addEventListener('click', (e) => {
 
     const rect = constellationCanvas.getBoundingClientRect();
@@ -441,7 +454,16 @@ constellationCanvas.addEventListener('click', (e) => {
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist < star.r) {
-            alert(star.title);
+
+            starPopup.textContent = star.title;
+            starPopup.style.left = `${e.clientX}px`;
+            starPopup.style.top = `${e.clientY}px`;
+            starPopup.style.display = 'block';
+
+            clearTimeout(window._t);
+            window._t = setTimeout(() => {
+                starPopup.style.display = 'none';
+            }, 2000);
         }
     });
 });
