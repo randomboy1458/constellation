@@ -41,6 +41,7 @@ const isMobile =
 ========================================= */
 
 let bucketWidth;
+
 let starSize;
 
 function setupResponsiveSizes() {
@@ -57,7 +58,7 @@ function setupResponsiveSizes() {
 
         bucketWidth = w * 0.12;
 
-        starSize = w * 0.02;
+        starSize = w * 0.022;
     }
 
     bucket.style.width = `${bucketWidth}px`;
@@ -74,7 +75,7 @@ setupResponsiveSizes();
 ========================================= */
 
 const messageDate = new Date(
-    2026,
+    2025,
     4,
     24,
     17,
@@ -163,10 +164,6 @@ let bucketX = window.innerWidth / 2;
 
 let bucketY = window.innerHeight * 0.82;
 
-let desktopLocked = false;
-
-let lastClickTime = 0;
-
 
 
 function resetMoonPosition() {
@@ -194,40 +191,13 @@ resetMoonPosition();
 
 
 /* =========================================
-   LAPTOP / DESKTOP
+   DESKTOP / LAPTOP
+   MOON FOLLOWS CURSOR
 ========================================= */
-
-bucket.addEventListener('click', () => {
-
-    if (isMobile) return;
-
-    const now = Date.now();
-
-    if (now - lastClickTime < 350) {
-
-        desktopLocked = !desktopLocked;
-
-        if (desktopLocked) {
-
-            bucket.style.filter =
-                'drop-shadow(0 0 18px rgba(255,255,255,0.9))';
-
-        } else {
-
-            bucket.style.filter = 'none';
-        }
-    }
-
-    lastClickTime = now;
-});
-
-
 
 document.addEventListener('mousemove', (e) => {
 
     if (isMobile) return;
-
-    if (!desktopLocked) return;
 
     if (gameComplete) return;
 
@@ -242,26 +212,44 @@ document.addEventListener('mousemove', (e) => {
 
 /* =========================================
    MOBILE / TABLET
+   DRAG MOON
 ========================================= */
 
-document.addEventListener(
-    'touchmove',
-    (e) => {
+let dragging = false;
 
-        if (!isMobile) return;
 
-        if (gameComplete) return;
 
-        const touch = e.touches[0];
+bucket.addEventListener('touchstart', () => {
 
-        bucketX = touch.clientX;
+    dragging = true;
+});
 
-        bucketY = touch.clientY;
 
-        updateBucketPosition();
-    },
-    { passive: true }
-);
+
+document.addEventListener('touchmove', (e) => {
+
+    if (!isMobile) return;
+
+    if (!dragging) return;
+
+    if (gameComplete) return;
+
+    const touch = e.touches[0];
+
+    bucketX = touch.clientX;
+
+    bucketY = touch.clientY;
+
+    updateBucketPosition();
+
+}, { passive: true });
+
+
+
+document.addEventListener('touchend', () => {
+
+    dragging = false;
+});
 
 
 
@@ -291,7 +279,7 @@ class FallingStar {
 
 
 
-        /* RANDOM EXIT */
+        /* RANDOM EXIT DIRECTION */
 
         const exitLeft =
             Math.random() < 0.5;
@@ -299,10 +287,12 @@ class FallingStar {
 
 
         const targetX = exitLeft
-            ? -250
-            : canvas.width + 250;
+            ? -300
+            : canvas.width + 300;
 
 
+
+        /* EXIT AROUND 3/4 SCREEN */
 
         const targetY =
             canvas.height * 0.75;
@@ -318,8 +308,10 @@ class FallingStar {
 
 
 
+        /* RANDOM SPEED */
+
         const speed =
-            2 + Math.random() * 2.5;
+            2 + Math.random() * 3;
 
 
 
@@ -371,13 +363,13 @@ class FallingStar {
 
 
 
-        /* MISSED */
+        /* MISSED STAR */
 
         if (
 
-            this.x < -300 ||
+            this.x < -350 ||
 
-            this.x > canvas.width + 300 ||
+            this.x > canvas.width + 350 ||
 
             this.y > canvas.height * 0.76
 
@@ -387,6 +379,8 @@ class FallingStar {
         }
 
 
+
+        /* COLLISION */
 
         if (this.checkCollision()) {
 
@@ -679,6 +673,10 @@ function hideMessage() {
         );
 
     } else {
+
+        currentFallingStar = null;
+
+        isStarFalling = false;
 
         canSpawnStar = true;
     }
