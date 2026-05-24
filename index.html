@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, user-scalable=no"
+    >
+
+    <title>Constellation of Us ✨</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+    <!-- GAME CONTAINER -->
+
+    <div id="game-container">
+
+        <!-- BACKGROUND -->
+
+        <div id="sky-background"></div>
+
+        <!-- CANVAS -->
+
+        <canvas id="game-canvas"></canvas>
+
+        <!-- BUCKET -->
+
+        <img
+            id="bucket"
+            src="images/bucket.png"
+            alt="Bucket"
+        >
+
+        <!-- COUNTER -->
+
+        <div id="stars-left">
+
+            Stars Remaining:
+            <span id="stars-count">6</span>
+
+        </div>
+
+        <!-- HINT -->
+
+        <div id="hint-text">
+
+            Catch the glowing stars ✨
+
+        </div>
+
+    </div>
+
+    <!-- MEMORY MODAL -->
+
+    <div id="message-modal" class="hidden">
+
+        <div class="modal-overlay"></div>
+
+        <div class="modal-content">
+
+            <div class="modal-title">
+
+                ✨ A Memory ✨
+
+            </div>
+
+            <div id="message-text"></div>
+
+            <button
+                id="close-message"
+                disabled
+            >
+                I love you ❤️
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- FINAL CONSTELLATION -->
+
+    <div id="constellation-modal" class="hidden">
+
+        <div class="modal-overlay"></div>
+
+        <div class="constellation-content">
+
+            <div class="constellation-title">
+
+                Our Constellation
+
+            </div>
+
+            <p class="constellation-subtitle">
+
+                journey through six beautiful memories 
+
+            </p>
+
+            <canvas id="constellation-canvas"></canvas>
+
+            <div class="constellation-message">
+
+                Every lil memory of us has taken the shape of a star <br>
+                collect them to complete a constellation <br><br>
+
+                <strong>
+                    Happy 1 year Anniversary ❤️
+                </strong>
+
+            </div>
+
+            <button id="replay-button">
+
+                Watch Again ✨
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <script src="memories.js"></script>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

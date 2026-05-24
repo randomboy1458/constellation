@@ -1,0 +1,542 @@
+/* ============ RESET & BASE ============ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    overflow: hidden;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: #000;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* ============ GAME CONTAINER ============ */
+#game-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ============ NIGHT SKY BACKGROUND ============ */
+#sky-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('images/sky-pc.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 0;
+}
+
+/* Mobile background */
+@media (max-width: 768px) {
+    #sky-background {
+        background-image: url('images/sky-mobile.jpg');
+    }
+}
+
+/* ============ GAME CANVAS ============ */
+#game-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* ============ MOON BUCKET ============ */
+#bucket {
+    position: absolute;
+    bottom: 35px;
+    left: 50%;
+    transform: translateX(-50%);
+    
+    /* SMALLER SIZE */
+    width: 65px;
+    height: auto;
+
+    z-index: 2;
+    pointer-events: none;
+
+    transition: left 0.05s ease-out;
+
+    /* soft glow */
+    filter:
+        drop-shadow(0 0 8px rgba(255, 240, 180, 0.5))
+        drop-shadow(0 0 18px rgba(255, 230, 140, 0.3));
+}
+
+/* MOBILE SIZE */
+@media (max-width: 768px) {
+    #bucket {
+        width: 78px;
+        bottom: 55px;
+    }
+}
+
+/* ============ PROGRESS INDICATOR ============ */
+#stars-left {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 3;
+
+    color: #ffd700;
+    font-size: 18px;
+
+    background: rgba(0, 0, 0, 0.45);
+
+    padding: 10px 18px;
+
+    border-radius: 25px;
+
+    backdrop-filter: blur(5px);
+
+    border: 1px solid rgba(255, 215, 0, 0.25);
+
+    letter-spacing: 1px;
+}
+
+#stars-count {
+    font-weight: bold;
+    font-size: 22px;
+}
+
+@media (max-width: 768px) {
+    #stars-left {
+        top: 15px;
+        right: 15px;
+        font-size: 14px;
+        padding: 8px 14px;
+    }
+
+    #stars-count {
+        font-size: 18px;
+    }
+}
+
+/* ============ HINT TEXT ============ */
+#hint-text {
+    position: absolute;
+    bottom: 145px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    z-index: 3;
+
+    color: rgba(255, 255, 255, 0.85);
+
+    font-size: 15px;
+
+    text-align: center;
+
+    animation: fadeInOut 3s ease-in-out infinite;
+
+    pointer-events: none;
+
+    text-shadow: 0 0 12px rgba(255,255,255,0.4);
+}
+
+@keyframes fadeInOut {
+    0%, 100% {
+        opacity: 0.35;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+#hint-text.hidden {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    #hint-text {
+        bottom: 170px;
+        font-size: 13px;
+    }
+}
+
+/* ============ MESSAGE MODAL ============ */
+#message-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    width: 100vw;
+    height: 100vh;
+
+    z-index: 100;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#message-modal.hidden {
+    display: none;
+}
+
+.modal-overlay {
+    position: absolute;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: rgba(0, 0, 0, 0.78);
+
+    backdrop-filter: blur(8px);
+}
+
+.modal-content {
+    position: relative;
+    z-index: 1;
+
+    background:
+        linear-gradient(
+            145deg,
+            #0d1b2a,
+            #14263b,
+            #0d1b2a
+        );
+
+    border: 2px solid rgba(255, 215, 0, 0.35);
+
+    border-radius: 22px;
+
+    padding: 30px;
+
+    max-width: 550px;
+    width: 90%;
+
+    max-height: 75vh;
+
+    display: flex;
+    flex-direction: column;
+
+    box-shadow:
+        0 0 40px rgba(255, 215, 0, 0.15),
+        0 0 90px rgba(255, 215, 0, 0.08),
+        inset 0 0 30px rgba(255, 215, 0, 0.03);
+
+    animation: modalAppear 0.5s ease-out;
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.92) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-title {
+    color: #ffd700;
+
+    font-size: 22px;
+
+    text-align: center;
+
+    margin-bottom: 15px;
+
+    letter-spacing: 2px;
+
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+#message-text {
+    color: #ece6d9;
+
+    font-size: 17px;
+
+    line-height: 1.8;
+
+    overflow-y: auto;
+
+    flex-grow: 1;
+
+    padding: 15px;
+
+    margin-bottom: 15px;
+
+    max-height: 40vh;
+
+    scroll-behavior: smooth;
+
+    border-top: 1px solid rgba(255, 215, 0, 0.18);
+
+    border-bottom: 1px solid rgba(255, 215, 0, 0.18);
+}
+
+#message-text::-webkit-scrollbar {
+    width: 6px;
+}
+
+#message-text::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+}
+
+#message-text::-webkit-scrollbar-thumb {
+    background: rgba(255,215,0,0.4);
+    border-radius: 5px;
+}
+
+#close-message {
+    display: block;
+
+    margin: 10px auto 0;
+
+    padding: 14px 35px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #ff6b81,
+            #ff4d6d
+        );
+
+    color: white;
+
+    border: none;
+
+    border-radius: 30px;
+
+    font-size: 18px;
+
+    cursor: pointer;
+
+    letter-spacing: 1px;
+
+    transition: all 0.3s ease;
+
+    box-shadow:
+        0 4px 15px rgba(255, 71, 87, 0.35);
+
+    font-family: 'Georgia', serif;
+}
+
+#close-message:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 6px 25px rgba(255, 71, 87, 0.55);
+}
+
+#close-message:active {
+    transform: scale(0.96);
+}
+
+@media (max-width: 768px) {
+    .modal-content {
+        padding: 20px 15px;
+        max-height: 80vh;
+    }
+
+    #message-text {
+        font-size: 15px;
+        max-height: 35vh;
+    }
+
+    #close-message {
+        font-size: 16px;
+        padding: 12px 28px;
+    }
+}
+
+/* ============ CONSTELLATION MODAL ============ */
+#constellation-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    width: 100vw;
+    height: 100vh;
+
+    z-index: 200;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#constellation-modal.hidden {
+    display: none;
+}
+
+.constellation-content {
+    position: relative;
+    z-index: 1;
+
+    background:
+        radial-gradient(
+            ellipse at center,
+            #0a1628 0%,
+            #050d18 100%
+        );
+
+    border: 2px solid rgba(255, 215, 0, 0.4);
+
+    border-radius: 22px;
+
+    padding: 30px;
+
+    max-width: 650px;
+    width: 95%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    box-shadow:
+        0 0 60px rgba(255, 215, 0, 0.22),
+        0 0 120px rgba(255, 215, 0, 0.08);
+
+    animation: modalAppear 0.8s ease-out;
+}
+
+.constellation-title {
+    color: #ffd700;
+
+    font-size: 28px;
+
+    letter-spacing: 3px;
+
+    text-shadow:
+        0 0 30px rgba(255, 215, 0, 0.55);
+
+    margin-bottom: 5px;
+}
+
+.constellation-subtitle {
+    color: rgba(255,255,255,0.72);
+
+    font-size: 15px;
+
+    margin-bottom: 20px;
+
+    letter-spacing: 1px;
+}
+
+#constellation-canvas {
+    width: 100%;
+    max-width: 400px;
+
+    height: 400px;
+
+    margin: 10px 0;
+}
+
+@media (max-width: 768px) {
+    #constellation-canvas {
+        height: 300px;
+        max-width: 300px;
+    }
+}
+
+.constellation-message {
+    color: #ece6d9;
+
+    font-size: 16px;
+
+    text-align: center;
+
+    line-height: 1.8;
+
+    margin: 20px 0;
+
+    padding: 15px;
+
+    border-top: 1px solid rgba(255, 215, 0, 0.25);
+
+    border-bottom: 1px solid rgba(255, 215, 0, 0.25);
+}
+
+.constellation-message strong {
+    color: #ffd700;
+    font-size: 18px;
+}
+
+#replay-button {
+    padding: 12px 30px;
+
+    background: transparent;
+
+    color: #ffd700;
+
+    border: 2px solid #ffd700;
+
+    border-radius: 25px;
+
+    font-size: 16px;
+
+    cursor: pointer;
+
+    letter-spacing: 2px;
+
+    transition: all 0.3s ease;
+
+    font-family: 'Georgia', serif;
+}
+
+#replay-button:hover {
+    background: rgba(255, 215, 0, 0.12);
+
+    box-shadow:
+        0 0 20px rgba(255, 215, 0, 0.25);
+}
+
+/* ============ SHOOTING STARS ============ */
+.shooting-star {
+    position: absolute;
+
+    width: 2px;
+    height: 2px;
+
+    background: white;
+
+    border-radius: 50%;
+
+    z-index: 0;
+
+    animation: shoot linear forwards;
+
+    pointer-events: none;
+}
+
+@keyframes shoot {
+    0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+    }
+
+    70% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(420px, 320px) scale(0);
+
+        opacity: 0;
+    }
+}
