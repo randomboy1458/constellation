@@ -1,6 +1,8 @@
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 
+const bgMusic = document.getElementById('bg-music');
+
 const bucket = document.getElementById('bucket');
 
 const starsLeftSpan = document.getElementById('stars-count');
@@ -35,8 +37,6 @@ const messageDate = new Date(
     20
 );
 
-
-
 function getTimePassed() {
 
     const now = new Date();
@@ -53,8 +53,6 @@ function getTimePassed() {
 
     return `${days} days, ${hours} hours, ${mins} minutes`;
 }
-
-
 
 memories.forEach(memory => {
 
@@ -111,7 +109,7 @@ let bucketX = window.innerWidth / 2;
 
 let bucketY = window.innerHeight - 140;
 
-
+let dragging = false;
 
 function updateBucketPosition() {
 
@@ -125,57 +123,57 @@ updateBucketPosition();
 
 
 
-/* =================================
-   DESKTOP + LAPTOP TRACKPAD
-================================= */
+/* =========================
+   DESKTOP / LAPTOP
+========================= */
+
+bucket.addEventListener('mousedown', () => {
+
+    dragging = true;
+
+});
+
+document.addEventListener('mouseup', () => {
+
+    dragging = false;
+
+});
 
 document.addEventListener('mousemove', (e) => {
 
+    if (!dragging) return;
+
     if (gameComplete) return;
 
+    bucketX = e.clientX;
 
+    bucketY = e.clientY;
 
-    const rect = bucket.getBoundingClientRect();
-
-
-
-    const centerX = rect.left + rect.width / 2;
-
-    const centerY = rect.top + rect.height / 2;
-
-
-
-    const distance = Math.sqrt(
-
-        (e.clientX - centerX) ** 2 +
-
-        (e.clientY - centerY) ** 2
-
-    );
-
-
-
-    /* only move when cursor is near moon */
-
-    if (distance < 180) {
-
-        bucketX = e.clientX;
-
-        bucketY = e.clientY;
-
-        updateBucketPosition();
-
-    }
+    updateBucketPosition();
 
 });
 
 
 
-/* =================================
-   MOBILE TOUCH DRAG
-================================= */
+/* =========================
+   MOBILE
+========================= */
 
-bucket.addEventListener('touchmove', (e) => {
+bucket.addEventListener('touchstart', () => {
+
+    dragging = true;
+
+});
+
+bucket.addEventListener('touchend', () => {
+
+    dragging = false;
+
+});
+
+document.addEventListener('touchmove', (e) => {
+
+    if (!dragging) return;
 
     if (gameComplete) return;
 
@@ -209,7 +207,7 @@ class FallingStar {
 
     reset() {
 
-        /* RANDOM SPAWN IN TOP 1/3 */
+        /* SPAWN ONLY TOP 1/3 */
 
         this.x = Math.random() * canvas.width;
 
@@ -217,14 +215,13 @@ class FallingStar {
 
 
 
-        /* EXIT LEFT OR RIGHT */
+        /* RANDOM EXIT SIDE */
 
         const exitSide = Math.random() < 0.5 ? -1 : 1;
 
 
 
-        /* STAR EXITS SCREEN
-           AROUND 3/4 HEIGHT */
+        /* STAR EXITS SCREEN BY 3/4 HEIGHT */
 
         const targetY = canvas.height * 0.75;
 
@@ -242,7 +239,7 @@ class FallingStar {
 
 
 
-        const length = Math.sqrt(dx * dx + dy * dy);
+        const distance = Math.sqrt(dx * dx + dy * dy);
 
 
 
@@ -252,9 +249,9 @@ class FallingStar {
 
 
 
-        this.vx = (dx / length) * speed;
+        this.vx = (dx / distance) * speed;
 
-        this.vy = (dy / length) * speed;
+        this.vy = (dy / distance) * speed;
 
 
 
@@ -284,8 +281,6 @@ class FallingStar {
 
             this.opacity += 0.02;
 
-
-
             if (this.opacity >= 1) {
 
                 this.opacity = 1;
@@ -306,7 +301,7 @@ class FallingStar {
 
 
 
-        /* STAR MISSED */
+        /* RESET IF MISSED */
 
         if (
 
@@ -339,8 +334,6 @@ class FallingStar {
     checkCollision() {
 
         const rect = bucket.getBoundingClientRect();
-
-
 
         return (
 
@@ -391,8 +384,11 @@ class FallingStar {
 
     draw(ctx) {
 
-        const pulseScale =
-            Math.sin(this.pulse) * 0.15 + 1;
+        const pulse =
+            Math.sin(this.pulse) * 0.3 + 0.7;
+
+        const glowPulse =
+            Math.sin(this.pulse * 1.5) * 0.2 + 0.8;
 
 
 
@@ -404,55 +400,109 @@ class FallingStar {
 
 
 
-        /* OUTER GLOW */
+        /* ORIGINAL GLOW */
 
-        const glow =
+        const outerGlow =
             ctx.createRadialGradient(
                 0,
                 0,
                 0,
                 0,
                 0,
-                40
+                45
             );
 
 
 
-        glow.addColorStop(
+        outerGlow.addColorStop(
             0,
-            'rgba(255,255,255,0.95)'
+            `rgba(255,255,200,${0.8 * glowPulse})`
         );
 
-        glow.addColorStop(
+        outerGlow.addColorStop(
             0.3,
-            'rgba(255,240,180,0.6)'
+            `rgba(255,230,150,${0.4 * glowPulse})`
         );
 
-        glow.addColorStop(
+        outerGlow.addColorStop(
+            0.6,
+            `rgba(255,200,100,${0.1 * glowPulse})`
+        );
+
+        outerGlow.addColorStop(
             1,
-            'rgba(255,220,120,0)'
+            'rgba(255,200,100,0)'
         );
 
 
 
-        ctx.fillStyle = glow;
+        ctx.fillStyle = outerGlow;
 
         ctx.beginPath();
 
-        ctx.arc(0, 0, 40, 0, Math.PI * 2);
+        ctx.arc(0, 0, 45, 0, Math.PI * 2);
 
         ctx.fill();
 
 
 
-        this.drawStar(
+        /* ORIGINAL STAR SHAPE */
+
+        this.drawStarShape(
             ctx,
             0,
             0,
-            this.size * pulseScale,
-            this.size * 0.45 * pulseScale,
+            this.size * pulse,
+            this.size * pulse * 0.45,
             5
         );
+
+
+
+        /* INNER CORE */
+
+        const innerGlow =
+            ctx.createRadialGradient(
+                0,
+                0,
+                0,
+                0,
+                0,
+                this.size * 0.4
+            );
+
+
+
+        innerGlow.addColorStop(
+            0,
+            'rgba(255,255,255,1)'
+        );
+
+        innerGlow.addColorStop(
+            0.5,
+            'rgba(255,255,220,0.8)'
+        );
+
+        innerGlow.addColorStop(
+            1,
+            'rgba(255,255,200,0)'
+        );
+
+
+
+        ctx.fillStyle = innerGlow;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            0,
+            0,
+            this.size * 0.4,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
 
 
 
@@ -462,7 +512,10 @@ class FallingStar {
 
 
 
-    drawStar(ctx, cx, cy, outerR, innerR, points) {
+    drawStarShape(ctx, cx, cy, outerR, innerR, points) {
+
+        ctx.fillStyle =
+            'rgba(255,255,230,0.95)';
 
         ctx.beginPath();
 
@@ -470,7 +523,7 @@ class FallingStar {
 
         for (let i = 0; i < points * 2; i++) {
 
-            const r =
+            const radius =
                 i % 2 === 0
                     ? outerR
                     : innerR;
@@ -478,14 +531,16 @@ class FallingStar {
 
 
             const angle =
-                (Math.PI * i) / points -
+                (i * Math.PI) / points -
                 Math.PI / 2;
 
 
 
-            const x = cx + Math.cos(angle) * r;
+            const x =
+                cx + Math.cos(angle) * radius;
 
-            const y = cy + Math.sin(angle) * r;
+            const y =
+                cy + Math.sin(angle) * radius;
 
 
 
@@ -505,13 +560,6 @@ class FallingStar {
 
         ctx.closePath();
 
-
-
-        ctx.fillStyle =
-            'rgba(255,255,230,1)';
-
-
-
         ctx.fill();
 
 
@@ -519,7 +567,7 @@ class FallingStar {
         ctx.strokeStyle =
             'rgba(255,255,255,0.5)';
 
-
+        ctx.lineWidth = 1;
 
         ctx.stroke();
 
@@ -543,17 +591,11 @@ function showMessage(memoryData) {
         ${memoryData.message.replace(/\n/g, '<br>')}
     `;
 
-
-
     messageText.scrollTop = 0;
-
-
 
     messageModal.classList.remove('hidden');
 
 }
-
-
 
 function hideMessage() {
 
@@ -579,8 +621,6 @@ function hideMessage() {
 
 }
 
-
-
 closeMessageBtn.addEventListener(
     'click',
     hideMessage
@@ -599,8 +639,6 @@ function showConstellation() {
     drawConstellation();
 
 }
-
-
 
 function drawConstellation() {
 
@@ -642,15 +680,9 @@ function drawConstellation() {
     constellationCtx.strokeStyle =
         'rgba(255,255,255,0.25)';
 
-
-
     constellationCtx.lineWidth = 2;
 
-
-
     constellationCtx.beginPath();
-
-
 
     constellationCtx.moveTo(
         points[0].x,
@@ -709,8 +741,6 @@ function drawConstellation() {
 
         constellationCtx.fillStyle = glow;
 
-
-
         constellationCtx.beginPath();
 
         constellationCtx.arc(
@@ -737,31 +767,55 @@ replayBtn.addEventListener('click', () => {
 
     constellationModal.classList.add('hidden');
 
-
-
     collectedStars = [];
-
-
 
     currentFallingStar = null;
 
-
-
     isStarFalling = false;
-
-
 
     canSpawnStar = true;
 
-
-
     gameComplete = false;
-
-
 
     starsLeftSpan.textContent = totalStars;
 
 });
+
+
+
+/* =========================
+   MUSIC
+========================= */
+
+function startMusic() {
+
+    bgMusic.volume = 0.45;
+
+    bgMusic.play().catch(() => {});
+
+
+
+    document.removeEventListener(
+        'click',
+        startMusic
+    );
+
+    document.removeEventListener(
+        'touchstart',
+        startMusic
+    );
+
+}
+
+document.addEventListener(
+    'click',
+    startMusic
+);
+
+document.addEventListener(
+    'touchstart',
+    startMusic
+);
 
 
 
@@ -818,7 +872,5 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 
 }
-
-
 
 gameLoop();
