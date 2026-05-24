@@ -25,9 +25,56 @@ const replayBtn = document.getElementById('replay-button');
 
 
 
-/* =========================
+/* =========================================
+   RESPONSIVE DEVICE DETECTION
+========================================= */
+
+const isMobile =
+    /Android|iPhone|iPad|iPod|Tablet/i.test(
+        navigator.userAgent
+    );
+
+
+
+/* =========================================
+   RESPONSIVE SIZES
+========================================= */
+
+let bucketWidth;
+let bucketHeight;
+let starSize;
+
+function setupResponsiveSizes() {
+
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    if (isMobile) {
+
+        bucketWidth = w * 0.22;
+        bucketHeight = bucketWidth;
+
+        starSize = w * 0.045;
+
+    } else {
+
+        bucketWidth = w * 0.12;
+        bucketHeight = bucketWidth;
+
+        starSize = w * 0.02;
+    }
+
+    bucket.style.width = `${bucketWidth}px`;
+    bucket.style.height = `auto`;
+}
+
+setupResponsiveSizes();
+
+
+
+/* =========================================
    TIME COUNTER
-========================= */
+========================================= */
 
 const messageDate = new Date(
     2026,
@@ -43,11 +90,17 @@ function getTimePassed() {
 
     const diff = now - messageDate;
 
-    const minutes = Math.floor(diff / (1000 * 60));
+    const minutes = Math.floor(
+        diff / (1000 * 60)
+    );
 
-    const days = Math.floor(minutes / (60 * 24));
+    const days = Math.floor(
+        minutes / (60 * 24)
+    );
 
-    const hours = Math.floor((minutes % (60 * 24)) / 60);
+    const hours = Math.floor(
+        (minutes % (60 * 24)) / 60
+    );
 
     const mins = minutes % 60;
 
@@ -65,9 +118,31 @@ memories.forEach(memory => {
 
 
 
-/* =========================
+/* =========================================
+   CANVAS
+========================================= */
+
+function resizeCanvas() {
+
+    canvas.width = window.innerWidth;
+
+    canvas.height = window.innerHeight;
+
+    setupResponsiveSizes();
+}
+
+resizeCanvas();
+
+window.addEventListener(
+    'resize',
+    resizeCanvas
+);
+
+
+
+/* =========================================
    GAME STATE
-========================= */
+========================================= */
 
 let collectedStars = [];
 
@@ -83,65 +158,56 @@ let gameComplete = false;
 
 
 
-/* =========================
-   CANVAS
-========================= */
-
-function resizeCanvas() {
-
-    canvas.width = window.innerWidth;
-
-    canvas.height = window.innerHeight;
-
-}
-
-resizeCanvas();
-
-window.addEventListener('resize', resizeCanvas);
-
-
-
-/* =========================
-   MOON MOVEMENT
-========================= */
+/* =========================================
+   MOON POSITION
+========================================= */
 
 let bucketX = window.innerWidth / 2;
 
-let bucketY = window.innerHeight - 140;
+let bucketY = window.innerHeight * 0.82;
 
 let dragging = false;
 
-function updateBucketPosition() {
+let desktopLocked = false;
 
-    bucket.style.left = bucketX + 'px';
+let lastTap = 0;
 
-    bucket.style.top = bucketY + 'px';
+function resetMoonPosition() {
 
+    bucketX = window.innerWidth / 2;
+
+    bucketY = window.innerHeight * 0.82;
+
+    updateBucketPosition();
 }
 
-updateBucketPosition();
+function updateBucketPosition() {
+
+    bucket.style.left = `${bucketX}px`;
+
+    bucket.style.top = `${bucketY}px`;
+}
+
+resetMoonPosition();
 
 
 
-/* =========================
-   DESKTOP / LAPTOP
-========================= */
+/* =========================================
+   DESKTOP / TOUCHPAD
+   DOUBLE CLICK TO ENABLE MOVE
+========================================= */
 
-bucket.addEventListener('mousedown', () => {
+bucket.addEventListener('dblclick', () => {
 
-    dragging = true;
-
-});
-
-document.addEventListener('mouseup', () => {
-
-    dragging = false;
+    desktopLocked = !desktopLocked;
 
 });
 
 document.addEventListener('mousemove', (e) => {
 
-    if (!dragging) return;
+    if (isMobile) return;
+
+    if (!desktopLocked) return;
 
     if (gameComplete) return;
 
@@ -155,9 +221,9 @@ document.addEventListener('mousemove', (e) => {
 
 
 
-/* =========================
-   MOBILE
-========================= */
+/* =========================================
+   MOBILE / TABLET
+========================================= */
 
 bucket.addEventListener('touchstart', () => {
 
@@ -165,33 +231,37 @@ bucket.addEventListener('touchstart', () => {
 
 });
 
-bucket.addEventListener('touchend', () => {
+document.addEventListener('touchend', () => {
 
     dragging = false;
 
 });
 
-document.addEventListener('touchmove', (e) => {
+document.addEventListener(
+    'touchmove',
+    (e) => {
 
-    if (!dragging) return;
+        if (!dragging) return;
 
-    if (gameComplete) return;
+        if (gameComplete) return;
 
-    e.preventDefault();
+        const touch = e.touches[0];
 
-    bucketX = e.touches[0].clientX;
+        bucketX = touch.clientX;
 
-    bucketY = e.touches[0].clientY;
+        bucketY = touch.clientY;
 
-    updateBucketPosition();
+        updateBucketPosition();
 
-}, { passive: false });
+    },
+    { passive: false }
+);
 
 
 
-/* =========================
-   FALLING STAR
-========================= */
+/* =========================================
+   STAR CLASS
+========================================= */
 
 class FallingStar {
 
@@ -200,36 +270,36 @@ class FallingStar {
         this.memoryData = memoryData;
 
         this.reset();
-
     }
-
-
 
     reset() {
 
-        /* SPAWN ONLY TOP 1/3 */
+        /* SPAWN IN TOP 1/3 */
 
-        this.x = Math.random() * canvas.width;
+        this.x =
+            Math.random() * canvas.width;
 
-        this.y = Math.random() * (canvas.height * 0.33);
-
-
-
-        /* RANDOM EXIT SIDE */
-
-        const exitSide = Math.random() < 0.5 ? -1 : 1;
+        this.y =
+            Math.random() *
+            (canvas.height * 0.33);
 
 
 
-        /* STAR EXITS SCREEN BY 3/4 HEIGHT */
+        /* EXIT LEFT OR RIGHT */
 
-        const targetY = canvas.height * 0.75;
+        const exitLeft =
+            Math.random() < 0.5;
 
 
 
-        const targetX = exitSide === -1
-            ? -300
-            : canvas.width + 300;
+        const targetX = exitLeft
+            ? -250
+            : canvas.width + 250;
+
+
+
+        const targetY =
+            canvas.height * 0.75;
 
 
 
@@ -237,25 +307,23 @@ class FallingStar {
 
         const dy = targetY - this.y;
 
-
-
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-
-
-        /* RANDOM SPEED */
-
-        const speed = 2 + Math.random() * 3;
+        const dist =
+            Math.sqrt(dx * dx + dy * dy);
 
 
 
-        this.vx = (dx / distance) * speed;
-
-        this.vy = (dy / distance) * speed;
-
+        const speed =
+            2 + Math.random() * 2.5;
 
 
-        this.size = 24;
+
+        this.vx = (dx / dist) * speed;
+
+        this.vy = (dy / dist) * speed;
+
+
+
+        this.size = starSize;
 
         this.opacity = 0;
 
@@ -263,11 +331,9 @@ class FallingStar {
 
         this.caught = false;
 
-        this.pulse = Math.random() * Math.PI * 2;
-
+        this.pulse =
+            Math.random() * Math.PI * 2;
     }
-
-
 
     update() {
 
@@ -275,22 +341,20 @@ class FallingStar {
 
 
 
-        /* FADE IN */
+        /* SPAWN FADE */
 
         if (this.fadeIn) {
 
-            this.opacity += 0.02;
+            this.opacity += 0.015;
 
             if (this.opacity >= 1) {
 
                 this.opacity = 1;
 
                 this.fadeIn = false;
-
             }
 
             return;
-
         }
 
 
@@ -301,55 +365,43 @@ class FallingStar {
 
 
 
-        /* RESET IF MISSED */
+        /* MISSED STAR -> RESPAWN */
 
         if (
 
-            this.x < -350 ||
+            this.x < -300 ||
 
-            this.x > canvas.width + 350 ||
+            this.x > canvas.width + 300 ||
 
             this.y > canvas.height * 0.76
 
         ) {
 
             this.reset();
-
         }
 
 
-
-        /* COLLISION */
 
         if (this.checkCollision()) {
 
             this.catch();
-
         }
-
     }
-
-
 
     checkCollision() {
 
-        const rect = bucket.getBoundingClientRect();
+        const rect =
+            bucket.getBoundingClientRect();
 
         return (
 
             this.x > rect.left &&
-
             this.x < rect.right &&
-
             this.y > rect.top &&
-
             this.y < rect.bottom
 
         );
-
     }
-
-
 
     catch() {
 
@@ -359,7 +411,9 @@ class FallingStar {
 
 
 
-        collectedStars.push(this.memoryData);
+        collectedStars.push(
+            this.memoryData
+        );
 
 
 
@@ -370,17 +424,15 @@ class FallingStar {
 
         if (collectedStars.length === 1) {
 
-            hintText.classList.add('hidden');
-
+            hintText.classList.add(
+                'hidden'
+            );
         }
 
 
 
         showMessage(this.memoryData);
-
     }
-
-
 
     draw(ctx) {
 
@@ -388,7 +440,9 @@ class FallingStar {
             Math.sin(this.pulse) * 0.3 + 0.7;
 
         const glowPulse =
-            Math.sin(this.pulse * 1.5) * 0.2 + 0.8;
+            Math.sin(this.pulse * 1.5) *
+                0.2 +
+            0.8;
 
 
 
@@ -400,60 +454,65 @@ class FallingStar {
 
 
 
-        /* ORIGINAL GLOW */
+        /* OUTER GLOW */
 
-        const outerGlow =
+        const glow =
             ctx.createRadialGradient(
                 0,
                 0,
                 0,
                 0,
                 0,
-                45
+                this.size * 2
             );
 
 
 
-        outerGlow.addColorStop(
+        glow.addColorStop(
             0,
-            `rgba(255,255,200,${0.8 * glowPulse})`
+            `rgba(255,255,220,${
+                0.8 * glowPulse
+            })`
         );
 
-        outerGlow.addColorStop(
-            0.3,
-            `rgba(255,230,150,${0.4 * glowPulse})`
+        glow.addColorStop(
+            0.4,
+            `rgba(255,220,150,${
+                0.4 * glowPulse
+            })`
         );
 
-        outerGlow.addColorStop(
-            0.6,
-            `rgba(255,200,100,${0.1 * glowPulse})`
-        );
-
-        outerGlow.addColorStop(
+        glow.addColorStop(
             1,
-            'rgba(255,200,100,0)'
+            'rgba(255,220,150,0)'
         );
 
 
 
-        ctx.fillStyle = outerGlow;
+        ctx.fillStyle = glow;
 
         ctx.beginPath();
 
-        ctx.arc(0, 0, 45, 0, Math.PI * 2);
+        ctx.arc(
+            0,
+            0,
+            this.size * 2,
+            0,
+            Math.PI * 2
+        );
 
         ctx.fill();
 
 
 
-        /* ORIGINAL STAR SHAPE */
+        /* STAR */
 
         this.drawStarShape(
             ctx,
             0,
             0,
             this.size * pulse,
-            this.size * pulse * 0.45,
+            this.size * 0.45,
             5
         );
 
@@ -468,7 +527,7 @@ class FallingStar {
                 0,
                 0,
                 0,
-                this.size * 0.4
+                this.size * 0.5
             );
 
 
@@ -479,13 +538,8 @@ class FallingStar {
         );
 
         innerGlow.addColorStop(
-            0.5,
-            'rgba(255,255,220,0.8)'
-        );
-
-        innerGlow.addColorStop(
             1,
-            'rgba(255,255,200,0)'
+            'rgba(255,255,255,0)'
         );
 
 
@@ -497,7 +551,7 @@ class FallingStar {
         ctx.arc(
             0,
             0,
-            this.size * 0.4,
+            this.size * 0.5,
             0,
             Math.PI * 2
         );
@@ -507,42 +561,44 @@ class FallingStar {
 
 
         ctx.restore();
-
     }
 
-
-
-    drawStarShape(ctx, cx, cy, outerR, innerR, points) {
+    drawStarShape(
+        ctx,
+        cx,
+        cy,
+        outerR,
+        innerR,
+        points
+    ) {
 
         ctx.fillStyle =
-            'rgba(255,255,230,0.95)';
+            'rgba(255,255,240,0.95)';
 
         ctx.beginPath();
 
-
-
-        for (let i = 0; i < points * 2; i++) {
+        for (
+            let i = 0;
+            i < points * 2;
+            i++
+        ) {
 
             const radius =
                 i % 2 === 0
                     ? outerR
                     : innerR;
 
-
-
             const angle =
                 (i * Math.PI) / points -
                 Math.PI / 2;
 
-
-
             const x =
-                cx + Math.cos(angle) * radius;
+                cx +
+                Math.cos(angle) * radius;
 
             const y =
-                cy + Math.sin(angle) * radius;
-
-
+                cy +
+                Math.sin(angle) * radius;
 
             if (i === 0) {
 
@@ -551,35 +607,27 @@ class FallingStar {
             } else {
 
                 ctx.lineTo(x, y);
-
             }
-
         }
-
-
 
         ctx.closePath();
 
         ctx.fill();
 
-
-
         ctx.strokeStyle =
-            'rgba(255,255,255,0.5)';
+            'rgba(255,255,255,0.6)';
 
         ctx.lineWidth = 1;
 
         ctx.stroke();
-
     }
-
 }
 
 
 
-/* =========================
+/* =========================================
    MESSAGE MODAL
-========================= */
+========================================= */
 
 function showMessage(memoryData) {
 
@@ -588,37 +636,46 @@ function showMessage(memoryData) {
             ${memoryData.title}
         </h3>
 
-        ${memoryData.message.replace(/\n/g, '<br>')}
+        ${memoryData.message.replace(
+            /\n/g,
+            '<br>'
+        )}
     `;
 
     messageText.scrollTop = 0;
 
-    messageModal.classList.remove('hidden');
-
+    messageModal.classList.remove(
+        'hidden'
+    );
 }
 
 function hideMessage() {
 
-    messageModal.classList.add('hidden');
+    messageModal.classList.add(
+        'hidden'
+    );
 
 
 
-    if (collectedStars.length >= totalStars) {
+    resetMoonPosition();
+
+
+
+    if (
+        collectedStars.length >= totalStars
+    ) {
 
         gameComplete = true;
 
-        setTimeout(showConstellation, 1000);
+        setTimeout(
+            showConstellation,
+            1000
+        );
 
     } else {
 
-        setTimeout(() => {
-
-            canSpawnStar = true;
-
-        }, 3500);
-
+        canSpawnStar = true;
     }
-
 }
 
 closeMessageBtn.addEventListener(
@@ -628,21 +685,25 @@ closeMessageBtn.addEventListener(
 
 
 
-/* =========================
+/* =========================================
    CONSTELLATION
-========================= */
+========================================= */
 
 function showConstellation() {
 
-    constellationModal.classList.remove('hidden');
+    constellationModal.classList.remove(
+        'hidden'
+    );
 
     drawConstellation();
-
 }
 
 function drawConstellation() {
 
-    const size = 400;
+    const size = Math.min(
+        window.innerWidth * 0.8,
+        420
+    );
 
     constellationCanvas.width = size;
 
@@ -661,17 +722,17 @@ function drawConstellation() {
 
     const points = [
 
-        { x: 200, y: 320 },
+        { x: 0.5, y: 0.82 },
 
-        { x: 90, y: 210 },
+        { x: 0.2, y: 0.52 },
 
-        { x: 120, y: 90 },
+        { x: 0.28, y: 0.22 },
 
-        { x: 200, y: 60 },
+        { x: 0.5, y: 0.12 },
 
-        { x: 280, y: 90 },
+        { x: 0.72, y: 0.22 },
 
-        { x: 310, y: 210 }
+        { x: 0.8, y: 0.52 }
 
     ];
 
@@ -684,9 +745,11 @@ function drawConstellation() {
 
     constellationCtx.beginPath();
 
+
+
     constellationCtx.moveTo(
-        points[0].x,
-        points[0].y
+        points[0].x * size,
+        points[0].y * size
     );
 
 
@@ -694,10 +757,9 @@ function drawConstellation() {
     for (let i = 1; i < points.length; i++) {
 
         constellationCtx.lineTo(
-            points[i].x,
-            points[i].y
+            points[i].x * size,
+            points[i].y * size
         );
-
     }
 
 
@@ -710,14 +772,20 @@ function drawConstellation() {
 
     points.forEach(point => {
 
+        const x = point.x * size;
+
+        const y = point.y * size;
+
+
+
         const glow =
             constellationCtx.createRadialGradient(
-                point.x,
-                point.y,
+                x,
+                y,
                 0,
-                point.x,
-                point.y,
-                22
+                x,
+                y,
+                25
             );
 
 
@@ -728,13 +796,8 @@ function drawConstellation() {
         );
 
         glow.addColorStop(
-            0.5,
-            'rgba(255,220,140,0.5)'
-        );
-
-        glow.addColorStop(
             1,
-            'rgba(255,220,140,0)'
+            'rgba(255,255,255,0)'
         );
 
 
@@ -744,28 +807,28 @@ function drawConstellation() {
         constellationCtx.beginPath();
 
         constellationCtx.arc(
-            point.x,
-            point.y,
-            22,
+            x,
+            y,
+            25,
             0,
             Math.PI * 2
         );
 
         constellationCtx.fill();
-
     });
-
 }
 
 
 
-/* =========================
+/* =========================================
    REPLAY
-========================= */
+========================================= */
 
 replayBtn.addEventListener('click', () => {
 
-    constellationModal.classList.add('hidden');
+    constellationModal.classList.add(
+        'hidden'
+    );
 
     collectedStars = [];
 
@@ -777,23 +840,25 @@ replayBtn.addEventListener('click', () => {
 
     gameComplete = false;
 
-    starsLeftSpan.textContent = totalStars;
+    starsLeftSpan.textContent =
+        totalStars;
 
+    resetMoonPosition();
 });
 
 
 
-/* =========================
+/* =========================================
    MUSIC
-========================= */
+========================================= */
 
 function startMusic() {
+
+    if (!bgMusic) return;
 
     bgMusic.volume = 0.45;
 
     bgMusic.play().catch(() => {});
-
-
 
     document.removeEventListener(
         'click',
@@ -804,7 +869,6 @@ function startMusic() {
         'touchstart',
         startMusic
     );
-
 }
 
 document.addEventListener(
@@ -819,9 +883,9 @@ document.addEventListener(
 
 
 
-/* =========================
+/* =========================================
    GAME LOOP
-========================= */
+========================================= */
 
 function gameLoop() {
 
@@ -837,9 +901,7 @@ function gameLoop() {
     if (
 
         !isStarFalling &&
-
         canSpawnStar &&
-
         collectedStars.length < totalStars
 
     ) {
@@ -854,23 +916,23 @@ function gameLoop() {
         isStarFalling = true;
 
         canSpawnStar = false;
-
     }
 
 
 
-    if (currentFallingStar && isStarFalling) {
+    if (
+        currentFallingStar &&
+        isStarFalling
+    ) {
 
         currentFallingStar.update();
 
         currentFallingStar.draw(ctx);
-
     }
 
 
 
     requestAnimationFrame(gameLoop);
-
 }
 
 gameLoop();
