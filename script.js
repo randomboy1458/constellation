@@ -1,6 +1,31 @@
-// =========================
-// TIME SINCE MESSAGE
-// =========================
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+
+const bucket = document.getElementById('bucket');
+
+const starsLeftSpan = document.getElementById('stars-count');
+
+const hintText = document.getElementById('hint-text');
+
+const messageModal = document.getElementById('message-modal');
+
+const messageText = document.getElementById('message-text');
+
+const closeMessageBtn = document.getElementById('close-message');
+
+const constellationModal = document.getElementById('constellation-modal');
+
+const constellationCanvas = document.getElementById('constellation-canvas');
+
+const constellationCtx = constellationCanvas.getContext('2d');
+
+const replayBtn = document.getElementById('replay-button');
+
+
+
+/* =========================
+   TIME COUNTER
+========================= */
 
 const messageDate = new Date(
     2026,
@@ -10,85 +35,55 @@ const messageDate = new Date(
     20
 );
 
+
+
 function getTimePassed() {
 
     const now = new Date();
 
-    const diff =
-        now - messageDate;
+    const diff = now - messageDate;
 
-    const totalMinutes =
-        Math.floor(diff / 1000 / 60);
+    const minutes = Math.floor(diff / (1000 * 60));
 
-    const days =
-        Math.floor(totalMinutes / 1440);
+    const days = Math.floor(minutes / (60 * 24));
 
-    const hours =
-        Math.floor(
-            (totalMinutes % 1440) / 60
-        );
+    const hours = Math.floor((minutes % (60 * 24)) / 60);
 
-    const minutes =
-        totalMinutes % 60;
+    const mins = minutes % 60;
 
-    return `
-        ${days} days,
-        ${hours} hours,
-        ${minutes} minutes
-    `;
+    return `${days} days, ${hours} hours, ${mins} minutes`;
 }
 
-/* =========================
-   DOM ELEMENTS
-========================= */
 
-const canvas =
-    document.getElementById("game-canvas");
 
-const ctx =
-    canvas.getContext("2d");
+memories.forEach(memory => {
 
-const bucket =
-    document.getElementById("bucket");
+    memory.message = memory.message.replace(
+        /\[TIME_PASSED\]/g,
+        getTimePassed()
+    );
 
-const starsCount =
-    document.getElementById("stars-count");
+});
 
-const messageModal =
-    document.getElementById("message-modal");
 
-const messageText =
-    document.getElementById("message-text");
-
-const closeButton =
-    document.getElementById("close-message");
-
-const constellationModal =
-    document.getElementById("constellation-modal");
-
-const constellationCanvas =
-    document.getElementById("constellation-canvas");
-
-const constellationCtx =
-    constellationCanvas.getContext("2d");
-
-const replayButton =
-    document.getElementById("replay-button");
 
 /* =========================
    GAME STATE
 ========================= */
 
-let bucketX =
-    window.innerWidth / 2;
+let collectedStars = [];
 
-let currentStar = null;
+let totalStars = memories.length;
 
-let collected = [];
+let currentFallingStar = null;
 
-let canSpawn = true;
+let isStarFalling = false;
 
-let gameFinished = false;
+let canSpawnStar = true;
+
+let gameComplete = false;
+
+
 
 /* =========================
    CANVAS
@@ -96,59 +91,97 @@ let gameFinished = false;
 
 function resizeCanvas() {
 
-    canvas.width =
-        window.innerWidth;
+    canvas.width = window.innerWidth;
 
-    canvas.height =
-        window.innerHeight;
+    canvas.height = window.innerHeight;
+
 }
 
 resizeCanvas();
 
-window.addEventListener(
-    "resize",
-    resizeCanvas
-);
+window.addEventListener('resize', resizeCanvas);
+
+
 
 /* =========================
-   BUCKET
+   MOON MOVEMENT
 ========================= */
 
-function updateBucket() {
+let bucketX = window.innerWidth / 2;
 
-    bucket.style.left =
-        bucketX + "px";
+let bucketY = window.innerHeight - 140;
+
+let dragging = false;
+
+
+
+function updateBucketPosition() {
+
+    bucket.style.left = bucketX + 'px';
+
+    bucket.style.top = bucketY + 'px';
+
 }
+
+updateBucketPosition();
+
+
 
 /* DESKTOP */
 
-document.addEventListener(
-    "mousemove",
-    e => {
+bucket.addEventListener('mousedown', () => {
 
-        bucketX =
-            e.clientX;
+    dragging = true;
 
-        updateBucket();
-    }
-);
+});
+
+
+
+document.addEventListener('mouseup', () => {
+
+    dragging = false;
+
+});
+
+
+
+document.addEventListener('mousemove', (e) => {
+
+    if (!dragging) return;
+
+    if (gameComplete) return;
+
+
+
+    bucketX = e.clientX;
+
+    bucketY = e.clientY;
+
+
+
+    updateBucketPosition();
+
+});
+
+
 
 /* MOBILE */
 
-document.addEventListener(
-    "touchmove",
-    e => {
+bucket.addEventListener('touchmove', (e) => {
 
-        e.preventDefault();
+    if (gameComplete) return;
 
-        bucketX =
-            e.touches[0].clientX;
+    e.preventDefault();
 
-        updateBucket();
+    bucketX = e.touches[0].clientX;
 
-    },
-    { passive: false }
-);
+    bucketY = e.touches[0].clientY;
+
+    updateBucketPosition();
+
+}, { passive: false });
+
+
 
 /* =========================
    FALLING STAR
@@ -156,189 +189,215 @@ document.addEventListener(
 
 class FallingStar {
 
-    constructor(memory) {
+    constructor(memoryData) {
 
-        this.memory = memory;
+        this.memoryData = memoryData;
 
-        /* =========================
-           RANDOM SPAWN
-        ========================= */
+        this.reset();
 
-        this.x =
-            Math.random() *
-            (canvas.width - 200) + 100;
+    }
 
-        this.y =
-            Math.random() *
-            (canvas.height * 0.33);
 
-        /* =========================
-           RANDOM TRAJECTORY
-        ========================= */
 
-        const goLeft =
-            Math.random() < 0.5;
+    reset() {
 
-        this.speedX =
-            goLeft
+        /* SPAWN ONLY IN TOP 1/3 */
 
-            ? -(1 + Math.random() * 2.5)
+        this.x = Math.random() * canvas.width;
 
-            : (1 + Math.random() * 2.5);
+        this.y = Math.random() * (canvas.height * 0.33);
 
-        this.speedY =
-            1.2 + Math.random() * 1.8;
 
-        /* =========================
-           VISUALS
-        ========================= */
 
-        this.pulse = 0;
+        /* RANDOM LEFT OR RIGHT EXIT */
+
+        const exitSide = Math.random() < 0.5 ? -1 : 1;
+
+
+
+        /* STAR SHOULD EXIT SCREEN
+           AROUND 3/4 HEIGHT */
+
+        const targetY = canvas.height * 0.75;
+
+
+
+        const targetX = exitSide === -1
+            ? -250
+            : canvas.width + 250;
+
+
+
+        const dx = targetX - this.x;
+
+        const dy = targetY - this.y;
+
+
+
+        const length = Math.sqrt(dx * dx + dy * dy);
+
+
+
+        /* RANDOM SPEED */
+
+        const speed = 2 + Math.random() * 3;
+
+
+
+        this.vx = (dx / length) * speed;
+
+        this.vy = (dy / length) * speed;
+
+
+
+        this.size = 24;
 
         this.opacity = 0;
 
-        this.fadingIn = true;
+        this.fadeIn = true;
 
-        this.active = false;
+        this.caught = false;
 
-        this.activationDelay = 120;
+        this.pulse = Math.random() * Math.PI * 2;
 
-        this.delayCounter = 0;
-
-        this.size = 10;
     }
+
+
 
     update() {
 
         this.pulse += 0.05;
 
-        /* =========================
-           FADE IN
-        ========================= */
 
-        if (this.fadingIn) {
 
-            this.opacity += 0.01;
+        /* FADE IN EFFECT */
+
+        if (this.fadeIn) {
+
+            this.opacity += 0.02;
+
+
 
             if (this.opacity >= 1) {
 
                 this.opacity = 1;
 
-                this.fadingIn = false;
+                this.fadeIn = false;
+
             }
 
             return;
         }
 
-        /* =========================
-           WAIT BEFORE FALL
-        ========================= */
 
-        if (!this.active) {
 
-            this.delayCounter++;
+        this.x += this.vx;
 
-            if (
-                this.delayCounter >=
-                this.activationDelay
-            ) {
+        this.y += this.vy;
 
-                this.active = true;
-            }
 
-            return;
-        }
 
-        /* =========================
-           MOVEMENT
-        ========================= */
-
-        this.x += this.speedX;
-
-        this.y += this.speedY;
-
-        /* NATURAL DRIFT */
-
-        this.x +=
-            Math.sin(this.pulse) * 0.15;
-
-        /* =========================
-           EXIT SCREEN
-        ========================= */
-
-        const exitedLeft =
-            this.x < -100;
-
-        const exitedRight =
-            this.x > canvas.width + 100;
-
-        const exitedBottom =
-            this.y >
-            canvas.height * 0.78;
+        /* IF STAR MISSED */
 
         if (
-            exitedBottom &&
-            (exitedLeft || exitedRight)
+
+            this.x < -300 ||
+
+            this.x > canvas.width + 300 ||
+
+            this.y > canvas.height * 0.76
+
         ) {
 
-            currentStar = null;
+            this.reset();
 
-            canSpawn = true;
         }
 
-        /* =========================
-           COLLISION
-        ========================= */
+
+
+        /* COLLISION */
 
         if (this.checkCollision()) {
 
             this.catch();
+
         }
+
     }
+
+
 
     checkCollision() {
 
-        const rect =
-            bucket.getBoundingClientRect();
+        const rect = bucket.getBoundingClientRect();
+
+
 
         return (
 
             this.x > rect.left &&
+
             this.x < rect.right &&
 
-            this.y > rect.top - 30 &&
+            this.y > rect.top &&
+
             this.y < rect.bottom
+
         );
+
     }
+
+
 
     catch() {
 
-        collected.push(this.memory);
+        this.caught = true;
 
-        starsCount.textContent =
-            memories.length -
-            collected.length;
+        isStarFalling = false;
 
-        showMessage(this.memory);
 
-        currentStar = null;
 
-        canSpawn = false;
+        collectedStars.push(this.memoryData);
+
+
+
+        starsLeftSpan.textContent =
+            totalStars - collectedStars.length;
+
+
+
+        if (collectedStars.length === 1) {
+
+            hintText.classList.add('hidden');
+
+        }
+
+
+
+        showMessage(this.memoryData);
+
     }
 
-    draw() {
+
+
+    draw(ctx) {
+
+        const pulseScale =
+            Math.sin(this.pulse) * 0.15 + 1;
+
+
 
         ctx.save();
 
+        ctx.globalAlpha = this.opacity;
+
         ctx.translate(this.x, this.y);
 
-        const glowPulse =
-            Math.sin(this.pulse) *
-            0.2 + 0.8;
+
 
         /* OUTER GLOW */
 
-        const gradient =
+        const glow =
             ctx.createRadialGradient(
                 0,
                 0,
@@ -348,178 +407,177 @@ class FallingStar {
                 40
             );
 
-        gradient.addColorStop(
+
+
+        glow.addColorStop(
             0,
-            `rgba(255,255,255,${
-                0.9 *
-                glowPulse *
-                this.opacity
-            })`
+            'rgba(255,255,255,0.95)'
         );
 
-        gradient.addColorStop(
-            0.4,
-            `rgba(255,240,200,${
-                0.4 *
-                this.opacity
-            })`
+        glow.addColorStop(
+            0.3,
+            'rgba(255,240,180,0.6)'
         );
 
-        gradient.addColorStop(
+        glow.addColorStop(
             1,
-            `rgba(255,255,255,0)`
+            'rgba(255,220,120,0)'
         );
 
-        ctx.fillStyle = gradient;
+
+
+        ctx.fillStyle = glow;
 
         ctx.beginPath();
 
-        ctx.arc(
-            0,
-            0,
-            40,
-            0,
-            Math.PI * 2
-        );
+        ctx.arc(0, 0, 40, 0, Math.PI * 2);
 
         ctx.fill();
 
-        /* INNER STAR */
+
+
+        this.drawStar(
+            ctx,
+            0,
+            0,
+            this.size * pulseScale,
+            this.size * 0.45 * pulseScale,
+            5
+        );
+
+
+
+        ctx.restore();
+
+    }
+
+
+
+    drawStar(ctx, cx, cy, outerR, innerR, points) {
+
+        ctx.beginPath();
+
+
+
+        for (let i = 0; i < points * 2; i++) {
+
+            const r =
+                i % 2 === 0
+                    ? outerR
+                    : innerR;
+
+
+
+            const angle =
+                (Math.PI * i) / points -
+                Math.PI / 2;
+
+
+
+            const x = cx + Math.cos(angle) * r;
+
+            const y = cy + Math.sin(angle) * r;
+
+
+
+            if (i === 0) {
+
+                ctx.moveTo(x, y);
+
+            } else {
+
+                ctx.lineTo(x, y);
+
+            }
+
+        }
+
+
+
+        ctx.closePath();
+
+
 
         ctx.fillStyle =
-            `rgba(255,255,255,${
-                this.opacity
-            })`;
+            'rgba(255,255,230,1)';
 
-        ctx.beginPath();
 
-        ctx.arc(
-            0,
-            0,
-            this.size,
-            0,
-            Math.PI * 2
-        );
 
         ctx.fill();
 
-        /* SPARKLE */
+
 
         ctx.strokeStyle =
-            `rgba(255,255,255,${
-                0.5 *
-                this.opacity
-            })`;
+            'rgba(255,255,255,0.5)';
 
-        ctx.lineWidth = 1;
 
-        ctx.beginPath();
-
-        ctx.moveTo(-14, 0);
-        ctx.lineTo(14, 0);
-
-        ctx.moveTo(0, -14);
-        ctx.lineTo(0, 14);
 
         ctx.stroke();
 
-        ctx.restore();
     }
+
 }
+
+
 
 /* =========================
    MESSAGE MODAL
 ========================= */
 
-function showMessage(memory) {
-
-    const formattedMessage =
-        memory.message
-            .replace(
-                "[TIME_PASSED]",
-                getTimePassed()
-            )
-            .replace(/\n/g, "<br>");
+function showMessage(memoryData) {
 
     messageText.innerHTML = `
-
-        <h3 style="
-            color: gold;
-            margin-bottom: 12px;
-        ">
-
-            ${memory.title}
-
+        <h3 style="color:#ffd700;margin-bottom:12px;">
+            ${memoryData.title}
         </h3>
 
-        ${formattedMessage}
+        ${memoryData.message.replace(/\n/g, '<br>')}
     `;
+
+
 
     messageText.scrollTop = 0;
 
-    closeButton.disabled = true;
 
-    messageModal.classList.remove(
-        "hidden"
-    );
+
+    messageModal.classList.remove('hidden');
+
 }
 
-/* =========================
-   REQUIRE FULL SCROLL
-========================= */
 
-messageText.addEventListener(
-    "scroll",
-    () => {
 
-        const reachedBottom =
+function hideMessage() {
 
-            messageText.scrollTop +
-            messageText.clientHeight >=
+    messageModal.classList.add('hidden');
 
-            messageText.scrollHeight - 10;
 
-        if (reachedBottom) {
 
-            closeButton.disabled = false;
-        }
+    if (collectedStars.length >= totalStars) {
+
+        gameComplete = true;
+
+        setTimeout(showConstellation, 1000);
+
+    } else {
+
+        setTimeout(() => {
+
+            canSpawnStar = true;
+
+        }, 3500);
+
     }
+
+}
+
+
+
+closeMessageBtn.addEventListener(
+    'click',
+    hideMessage
 );
 
-/* =========================
-   CLOSE MESSAGE
-========================= */
 
-closeButton.addEventListener(
-    "click",
-    () => {
-
-        messageModal.classList.add(
-            "hidden"
-        );
-
-        if (
-            collected.length >=
-            memories.length
-        ) {
-
-            gameFinished = true;
-
-            setTimeout(
-                showConstellation,
-                1000
-            );
-
-        } else {
-
-            setTimeout(() => {
-
-                canSpawn = true;
-
-            }, 4000);
-        }
-    }
-);
 
 /* =========================
    CONSTELLATION
@@ -527,67 +585,87 @@ closeButton.addEventListener(
 
 function showConstellation() {
 
-    constellationModal.classList.remove(
-        "hidden"
-    );
+    constellationModal.classList.remove('hidden');
 
-    constellationCanvas.width = 400;
+    drawConstellation();
 
-    constellationCanvas.height = 400;
+}
 
-    const points = [
 
-        { x: 200, y: 340 },
 
-        { x: 90, y: 220 },
+function drawConstellation() {
 
-        { x: 120, y: 110 },
+    const size = 400;
 
-        { x: 200, y: 70 },
+    constellationCanvas.width = size;
 
-        { x: 280, y: 110 },
+    constellationCanvas.height = size;
 
-        { x: 310, y: 220 }
-    ];
+
 
     constellationCtx.clearRect(
         0,
         0,
-        400,
-        400
+        size,
+        size
     );
 
-    /* HEART LINES */
+
+
+    const points = [
+
+        { x: 200, y: 320 },
+
+        { x: 90, y: 210 },
+
+        { x: 120, y: 90 },
+
+        { x: 200, y: 60 },
+
+        { x: 280, y: 90 },
+
+        { x: 310, y: 210 }
+
+    ];
+
+
 
     constellationCtx.strokeStyle =
-        "rgba(255,255,255,0.25)";
+        'rgba(255,255,255,0.25)';
+
+
 
     constellationCtx.lineWidth = 2;
 
+
+
     constellationCtx.beginPath();
+
+
 
     constellationCtx.moveTo(
         points[0].x,
         points[0].y
     );
 
-    for (
-        let i = 1;
-        i < points.length;
-        i++
-    ) {
+
+
+    for (let i = 1; i < points.length; i++) {
 
         constellationCtx.lineTo(
             points[i].x,
             points[i].y
         );
+
     }
+
+
 
     constellationCtx.closePath();
 
     constellationCtx.stroke();
 
-    /* HEART STARS */
+
 
     points.forEach(point => {
 
@@ -598,75 +676,85 @@ function showConstellation() {
                 0,
                 point.x,
                 point.y,
-                25
+                22
             );
+
+
 
         glow.addColorStop(
             0,
-            "rgba(255,255,255,1)"
+            'rgba(255,255,255,1)'
+        );
+
+        glow.addColorStop(
+            0.5,
+            'rgba(255,220,140,0.5)'
         );
 
         glow.addColorStop(
             1,
-            "rgba(255,255,255,0)"
+            'rgba(255,220,140,0)'
         );
 
-        constellationCtx.fillStyle =
-            glow;
+
+
+        constellationCtx.fillStyle = glow;
+
+
 
         constellationCtx.beginPath();
 
         constellationCtx.arc(
             point.x,
             point.y,
-            25,
+            22,
             0,
             Math.PI * 2
         );
 
         constellationCtx.fill();
 
-        constellationCtx.fillStyle =
-            "white";
-
-        constellationCtx.beginPath();
-
-        constellationCtx.arc(
-            point.x,
-            point.y,
-            6,
-            0,
-            Math.PI * 2
-        );
-
-        constellationCtx.fill();
     });
+
 }
+
+
 
 /* =========================
    REPLAY
 ========================= */
 
-replayButton.addEventListener(
-    "click",
-    () => {
+replayBtn.addEventListener('click', () => {
 
-        collected = [];
+    constellationModal.classList.add('hidden');
 
-        currentStar = null;
 
-        canSpawn = true;
 
-        gameFinished = false;
+    collectedStars = [];
 
-        starsCount.textContent =
-            memories.length;
 
-        constellationModal.classList.add(
-            "hidden"
-        );
-    }
-);
+
+    currentFallingStar = null;
+
+
+
+    isStarFalling = false;
+
+
+
+    canSpawnStar = true;
+
+
+
+    gameComplete = false;
+
+
+
+    starsLeftSpan.textContent = totalStars;
+
+});
+
+
 
 /* =========================
    GAME LOOP
@@ -681,34 +769,47 @@ function gameLoop() {
         canvas.height
     );
 
-    /* SPAWN STAR */
+
 
     if (
-        !gameFinished &&
-        !currentStar &&
-        canSpawn
+
+        !isStarFalling &&
+
+        canSpawnStar &&
+
+        collectedStars.length < totalStars
+
     ) {
 
-        currentStar =
+        currentFallingStar =
             new FallingStar(
-                memories[
-                    collected.length
-                ]
+                memories[collectedStars.length]
             );
+
+
+
+        isStarFalling = true;
+
+        canSpawnStar = false;
+
     }
 
-    /* DRAW STAR */
 
-    if (currentStar) {
 
-        currentStar.update();
+    if (currentFallingStar && isStarFalling) {
 
-        currentStar.draw();
+        currentFallingStar.update();
+
+        currentFallingStar.draw(ctx);
+
     }
 
-    requestAnimationFrame(
-        gameLoop
-    );
+
+
+    requestAnimationFrame(gameLoop);
+
 }
+
+
 
 gameLoop();
